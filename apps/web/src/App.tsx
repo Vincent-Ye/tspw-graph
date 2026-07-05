@@ -1,9 +1,10 @@
-export function App() {
-  return (
-    <main>
-      <h1>江湖图谱</h1>
-      <p>从《笑傲江湖》理解本体与知识图谱</p>
-    </main>
-  )
-}
+import { BrowserRouter, NavLink } from 'react-router-dom'
 
+import { AppRoutes } from './app/router'
+import './styles/theme.css'
+
+const links = [['/guide', '导览'], ['/ontology', '本体'], ['/graph', '图谱'], ['/story', '故事线'], ['/ask', '问答'], ['/build', '构建']]
+
+export function App() {
+  return <BrowserRouter><a className="skip-link" href="#main">跳到主要内容</a><header className="site-header"><NavLink className="brand" to="/guide"><span>江湖</span>图谱</NavLink><nav aria-label="主导航">{links.map(([path, label]) => <NavLink key={path} to={path}>{label}</NavLink>)}</nav><div className="status"><i />《笑傲江湖》</div></header><main id="main"><AppRoutes /></main></BrowserRouter>
+}
