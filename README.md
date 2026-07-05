@@ -61,3 +61,7 @@ make verify
 ```bash
 make neo4j-down
 ```
+
+## 许可证
+
+项目代码采用 [Apache License 2.0](LICENSE) 发布。小说原文不属于本项目开源许可范围，且默认不会被 Git 跟踪或上传。
