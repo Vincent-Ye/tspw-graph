@@ -50,6 +50,11 @@ UPSERT_QUERIES: dict[str, str] = {
         SET n += row
         MERGE (n)-[:SOURCE]->(s)
         MERGE (n)-[:TARGET]->(t)
+        MERGE (s)-[r:RELATED {project_id: row.project_id, id: row.id}]->(t)
+        SET r.type = row.type,
+            r.from_chapter = row.from_chapter,
+            r.to_chapter = row.to_chapter,
+            r.confidence = row.confidence
         WITH n, row
         UNWIND row.evidence_ids AS evidence_id
         MATCH (e:Evidence {project_id: row.project_id, id: evidence_id})

@@ -23,9 +23,9 @@
   "facts": [
     {"id": "xiaoao:fact:yue-master-linghu", "type": "MASTER_OF", "source_id": "xiaoao:person:yuebuqun", "target_id": "xiaoao:person:linghuchong", "evidence_ids": ["xiaoao:evidence:master"], "confidence": 1.0},
     {"id": "xiaoao:fact:linghu-member-huashan", "type": "MEMBER_OF", "source_id": "xiaoao:person:linghuchong", "target_id": "xiaoao:sect:huashan", "evidence_ids": ["xiaoao:evidence:master"], "from_chapter": 1, "confidence": 1.0},
-    {"id": "xiaoao:fact:teaching-teacher", "type": "TEACHER", "source_id": "xiaoao:event:teaching-dugu", "target_id": "xiaoao:person:fengqingyang", "evidence_ids": ["xiaoao:evidence:instruction"], "confidence": 1.0},
-    {"id": "xiaoao:fact:teaching-student", "type": "STUDENT", "source_id": "xiaoao:event:teaching-dugu", "target_id": "xiaoao:person:linghuchong", "evidence_ids": ["xiaoao:evidence:instruction"], "confidence": 1.0},
-    {"id": "xiaoao:fact:teaching-subject", "type": "SUBJECT", "source_id": "xiaoao:event:teaching-dugu", "target_id": "xiaoao:martialart:dugu", "evidence_ids": ["xiaoao:evidence:dugu"], "confidence": 1.0},
+    {"id": "xiaoao:fact:teaching-teacher", "type": "TEACHER", "source_id": "xiaoao:event:teaching-dugu", "target_id": "xiaoao:person:fengqingyang", "evidence_ids": ["xiaoao:evidence:instruction"], "from_chapter": 10, "confidence": 1.0},
+    {"id": "xiaoao:fact:teaching-student", "type": "STUDENT", "source_id": "xiaoao:event:teaching-dugu", "target_id": "xiaoao:person:linghuchong", "evidence_ids": ["xiaoao:evidence:instruction"], "from_chapter": 10, "confidence": 1.0},
+    {"id": "xiaoao:fact:teaching-subject", "type": "SUBJECT", "source_id": "xiaoao:event:teaching-dugu", "target_id": "xiaoao:martialart:dugu", "evidence_ids": ["xiaoao:evidence:dugu"], "from_chapter": 10, "confidence": 1.0},
     {"id": "xiaoao:fact:linghu-knows-dugu", "type": "KNOWS", "source_id": "xiaoao:person:linghuchong", "target_id": "xiaoao:martialart:dugu", "evidence_ids": ["xiaoao:evidence:dugu"], "from_chapter": 10, "confidence": 1.0},
     {"id": "xiaoao:fact:linghu-knows-xixing", "type": "KNOWS", "source_id": "xiaoao:person:linghuchong", "target_id": "xiaoao:martialart:xixing", "evidence_ids": ["xiaoao:evidence:xixing"], "from_chapter": 22, "confidence": 1.0},
     {"id": "xiaoao:fact:ren-member-sunmoon", "type": "MEMBER_OF", "source_id": "xiaoao:person:renwoxing", "target_id": "xiaoao:sect:sunmoon", "evidence_ids": ["xiaoao:evidence:ren-leader"], "confidence": 1.0},
@@ -42,4 +42,3 @@
     {"id": "xiaoao:evidence:ren-leader", "chapter_id": "xiaoao:chapter:22", "start_offset": 523162, "end_offset": 523175, "quote": "這一位便是日月神教的任教主", "text_hash": "c72953e765f43a35efaee42e412ba6675c0845520da4873cbce302cf5d912286"}
   ]
 }
-

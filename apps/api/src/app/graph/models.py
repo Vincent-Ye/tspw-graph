@@ -78,3 +78,53 @@ class ImportSummary(BaseModel):
     created_facts: int = 0
     created_evidence: int = 0
 
+
+class EntitySummary(BaseModel):
+    id: str
+    project_id: str
+    type: str
+    name: str
+    aliases: list[str] = Field(default_factory=list)
+    description: str = ""
+
+
+class GraphEdge(BaseModel):
+    id: str
+    source_id: str
+    target_id: str
+    type: str
+    from_chapter: int | None = None
+    to_chapter: int | None = None
+    confidence: float = 1.0
+
+
+class Neighborhood(BaseModel):
+    nodes: list[EntitySummary]
+    edges: list[GraphEdge]
+
+
+class EvidenceDetail(BaseModel):
+    id: str
+    chapter_id: str
+    chapter_number: int
+    chapter_title: str
+    start_offset: int
+    end_offset: int
+    quote: str
+
+
+class RelatedFact(BaseModel):
+    id: str
+    type: str
+    source_id: str
+    target_id: str
+    evidence: list[EvidenceDetail] = Field(default_factory=list)
+
+
+class EntityDetail(EntitySummary):
+    facts: list[RelatedFact] = Field(default_factory=list)
+
+
+class TimelineEvent(BaseModel):
+    event: EntitySummary
+    chapter_number: int | None = None
