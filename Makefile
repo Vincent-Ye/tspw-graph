@@ -25,7 +25,7 @@ verify: neo4j-up
 	npm --prefix tests/e2e test
 
 neo4j-up:
-	docker compose up -d neo4j
+	docker compose up -d --wait --wait-timeout 60 neo4j
 
 neo4j-down:
 	docker compose down
