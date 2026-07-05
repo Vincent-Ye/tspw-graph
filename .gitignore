@@ -1,3 +1,9 @@
 .DS_Store
 .superpowers/
 .worktrees/
+.venv/
+node_modules/
+dist/
+*.db
+.pytest_cache/
+__pycache__/
