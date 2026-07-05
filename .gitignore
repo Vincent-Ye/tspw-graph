@@ -10,3 +10,4 @@ test-results/
 *.db
 .pytest_cache/
 __pycache__/
+/笑傲江湖/
