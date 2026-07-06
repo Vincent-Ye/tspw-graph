@@ -1,23 +1,27 @@
 # 江湖图谱
 
-以《笑傲江湖》为语料的本体与知识图谱教学演示。网站用一条循序渐进的教学路径说明：本体如何约束概念，知识图谱如何保存事实，原文证据如何让查询和问答可验证。
+以《笑傲江湖》为语料的本体与知识图谱教学网站。内置核心图谱用于讲解本体、事实、证据、图查询和可解释问答；在线构建工作台可上传 TXT 小说，由持久化 Worker 抽取并导入隔离的 Neo4j 项目图谱。
 
-Phase 1 使用人工校验的核心图谱，包含人物、门派、武学、事件、关系与原文证据。在线上传小说、模型配置和全书自动抽取属于 Phase 2，本版本没有伪装成可用功能的入口。
-
-## 技术栈
+## 技术栈与前置条件
 
 - React 19、TypeScript、Vite、Cytoscape.js
-- FastAPI、Pydantic、SQLAlchemy
-- Neo4j 5 Community（Docker Compose）
-- Pytest、Vitest、Playwright
+- FastAPI、SQLAlchemy、SQLite、Neo4j 5 Community
+- Python 3.12+、Node.js 22+、Docker Desktop/Engine + Compose
 
-## 前置条件
+## Docker Compose 运行
 
-- Python 3.12+
-- Node.js 22+ 与 npm
-- Docker Desktop（macOS/Windows）或 Docker Engine + Compose（Linux）
+```bash
+cp .env.example .env
+docker compose up -d --build --wait
+```
 
-## 安装与启动
+打开 `http://127.0.0.1:5173/guide`。Compose 启动 `web` / `api` / `worker` / `neo4j` 四个服务，上传文件与 SQLite 使用 `app-data` 卷。停止服务：
+
+```bash
+docker compose down
+```
+
+## 本地进程运行
 
 ```bash
 make install
@@ -26,42 +30,40 @@ make neo4j-up
 make dev
 ```
 
-`make dev` 会打印两个开发服务命令。分别在两个终端执行：
+`make dev` 会输出 API、Worker 和 Web 的三个终端命令。
 
-```bash
-.venv/bin/uvicorn app.main:app --app-dir apps/api/src --reload
-npm --prefix apps/web run dev
-```
-
-浏览器打开 `http://127.0.0.1:5173/guide`。Neo4j Browser 位于 `http://127.0.0.1:7474`。
-
-## 环境变量
+## 模型配置与密钥边界
 
 | 变量 | 默认值 | 用途 |
 | --- | --- | --- |
+| `DATA_ROOT` | `./data/uploads` | 上传原文存储根目录 |
+| `SQLITE_URL` | `sqlite:///./tspw-graph.db` | 项目、任务和质量报告 |
+| `MODEL_PROFILES_JSON` | 内置 `fixed:test` | OpenAI 兼容接口、Ollama 或测试模型档案 |
+| `OPENAI_API_KEY` | 无 | OpenAI 兼容档案的密钥 |
 | `NEO4J_URI` | `bolt://localhost:7687` | Neo4j Bolt 地址 |
-| `NEO4J_USER` | `neo4j` | Neo4j 用户名 |
-| `NEO4J_PASSWORD` | `development-only` | 本地演示密码；生产环境必须覆盖 |
-| `SQLITE_URL` | `sqlite:///./tspw-graph.db` | 项目元数据数据库 |
 
-FastAPI 会读取仓库根目录的 `.env`。Compose 的本地默认认证与上表一致。
+`.env.example` 含 OpenAI 与 `http://host.docker.internal:11434` Ollama 示例。档案只保存密钥环境变量名；Compose 仅向 Worker 注入 `OPENAI_API_KEY`，API 容器不获取模型密钥。
 
-## 数据与验证
+## 操作与恢复
 
-核心数据位于 `data/xiaoao/core-graph.json`。导入脚本会逐条核对证据的章节、字符偏移、短引文与 SHA-256 文本指纹；重复导入是幂等的。
+- 上传后任务 ID 保存在 URL，刷新可恢复进度；SSE 断开后前端自动轮询。
+- 任务可暂停、继续、取消；失败后可重试。Worker 重启会继续租约过期的任务。
+- 在项目切换器中选中用户项目后可删除；内置《笑傲江湖》项目不可删除。
 
-完整验证会启动 Neo4j、导入种子图谱，并运行后端单元/集成测试、前端测试、类型检查、生产构建、证据校验和浏览器端到端测试：
+## 验证、真实模型冒烟与备份
 
 ```bash
 make verify
+make smoke-openai
+make smoke-ollama
+docker run --rm -v tspw-graph_app-data:/data -v "$PWD/backups:/backup" alpine tar czf /backup/app-data.tgz -C /data .
+docker run --rm -v tspw-graph_neo4j-data:/data -v "$PWD/backups:/backup" alpine tar czf /backup/neo4j-data.tgz -C /data .
 ```
 
-停止本地 Neo4j：
+`make verify` 会核对内置图谱的原文证据，因此需要未纳入 Git 的 `笑傲江湖/笑傲江湖.txt`。若文件在其他位置，使用 `SOURCE_PATH=/path/to/笑傲江湖.txt make verify`。
 
-```bash
-make neo4j-down
-```
+真实模型冒烟测试在档案或密钥缺失时会明确跳过，不进入默认 `verify`。
 
 ## 许可证
 
-项目代码采用 [Apache License 2.0](LICENSE) 发布。小说原文不属于本项目开源许可范围，且默认不会被 Git 跟踪或上传。
+项目代码采用 [Apache License 2.0](LICENSE)。小说原文不属于本项目开源许可范围，且不会被 Git 跟踪。

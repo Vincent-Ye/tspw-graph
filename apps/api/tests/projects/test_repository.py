@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 
 from app.projects.repository import ProjectRepository
 
@@ -30,3 +30,20 @@ def test_create_user_project_persists_upload_metadata() -> None:
     assert project.is_builtin is False
     assert project.source_sha256 == "abc"
     assert [item.id for item in repository.list_projects()] == ["p-1"]
+
+
+def test_repository_upgrades_phase_one_project_table() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:")
+    with engine.begin() as connection:
+        connection.execute(text(
+            "CREATE TABLE projects (id VARCHAR(100) PRIMARY KEY, title VARCHAR(300) NOT NULL, "
+            "is_builtin BOOLEAN NOT NULL, created_at DATETIME NOT NULL, updated_at DATETIME NOT NULL)"
+        ))
+
+    repository = ProjectRepository(engine)
+    project = repository.create_user_project(
+        project_id="p-legacy", title="迁移测试", source_path="p-legacy/source.txt",
+        source_sha256="abc", source_encoding="utf-8", source_size=3,
+    )
+
+    assert project.source_path == "p-legacy/source.txt"

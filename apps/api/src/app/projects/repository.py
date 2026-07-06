@@ -1,4 +1,4 @@
-from sqlalchemy import Engine, func, select
+from sqlalchemy import Engine, func, inspect, select, text
 from sqlalchemy.orm import Session
 
 from app.projects.models import Base, Project
@@ -8,6 +8,22 @@ class ProjectRepository:
     def __init__(self, engine: Engine) -> None:
         self.engine = engine
         Base.metadata.create_all(engine)
+        self._upgrade_phase_one_schema()
+
+    def _upgrade_phase_one_schema(self) -> None:
+        if self.engine.dialect.name != "sqlite":
+            return
+        columns = {item["name"] for item in inspect(self.engine).get_columns("projects")}
+        additions = {
+            "source_path": "VARCHAR(500)",
+            "source_sha256": "VARCHAR(64)",
+            "source_encoding": "VARCHAR(30)",
+            "source_size": "BIGINT",
+        }
+        with self.engine.begin() as connection:
+            for name, sql_type in additions.items():
+                if name not in columns:
+                    connection.execute(text(f"ALTER TABLE projects ADD COLUMN {name} {sql_type}"))
 
     def ensure_builtin_project(self, project_id: str, title: str) -> Project:
         with Session(self.engine) as session:

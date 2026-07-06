@@ -1,6 +1,6 @@
 # 《笑傲江湖》知识图谱阶段二在线构建 Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 交付可上传 TXT、通过独立 Worker 调用 OpenAI 兼容 API 或 Ollama、可恢复地构建隔离知识图谱并展示进度与质量报告的阶段二闭环。
 
@@ -85,7 +85,7 @@
 - Consumes: `Settings.sqlite_url` 和现有 `ProjectRepository.ensure_builtin_project()`。
 - Produces: `StoredUpload`、`UploadStore.save(project_id, filename, stream)`、`ProjectRepository.create_user_project()`、`ProjectRepository.list_projects()` 和项目关联表。
 
-- [ ] **Step 1: 写上传限制与编码识别失败测试**
+- [x] **Step 1: 写上传限制与编码识别失败测试**
 
 ```python
 from io import BytesIO
@@ -112,12 +112,12 @@ def test_save_rejects_non_txt_and_oversized_content(tmp_path):
         store.save("p", "book.txt", BytesIO(b"12345"))
 ```
 
-- [ ] **Step 2: 运行测试并确认因模块缺失而失败**
+- [x] **Step 2: 运行测试并确认因模块缺失而失败**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/projects/test_files.py -v`
 Expected: FAIL with `ModuleNotFoundError: app.projects.files`.
 
-- [ ] **Step 3: 实现流式上传、编码识别和受控路径**
+- [x] **Step 3: 实现流式上传、编码识别和受控路径**
 
 ```python
 @dataclass(frozen=True)
@@ -153,7 +153,7 @@ class UploadStore:
 
 `decode_text()` 必须按 `utf-8-sig`、`utf-8`、`gb18030` 顺序尝试，并在全部失败时抛出 `InvalidUpload("UNSUPPORTED_ENCODING")`。
 
-- [ ] **Step 4: 扩展 SQLite 模型并测试项目创建**
+- [x] **Step 4: 扩展 SQLite 模型并测试项目创建**
 
 ```python
 def test_create_user_project_persists_upload_metadata(tmp_path):
@@ -168,12 +168,12 @@ def test_create_user_project_persists_upload_metadata(tmp_path):
 
 新增 `Project.is_builtin`、`source_path`、`source_sha256`、`source_encoding`、`source_size` 和 `updated_at`。`ensure_builtin_project()` 必须设置 `is_builtin=True`，且不覆盖已有用户字段。
 
-- [ ] **Step 5: 运行项目测试**
+- [x] **Step 5: 运行项目测试**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/projects -v`
 Expected: PASS.
 
-- [ ] **Step 6: 提交**
+- [x] **Step 6: 提交**
 
 ```bash
 git add apps/api/src/app/projects apps/api/src/app/settings.py apps/api/tests/projects
@@ -197,7 +197,7 @@ git commit -m "feat: persist uploaded novel projects"
 - Consumes: Task 1 的 `UploadStore`、`ProjectRepository`。
 - Produces: `ProjectUploadService.create()`、`GET /api/projects`、`GET /api/projects/{id}`、`DELETE /api/projects/{id}` 和 `Neo4jGraphWriter.delete_project(project_id)`。上传 HTTP 端点在 Task 3 创建任务仓储后接入。
 
-- [ ] **Step 1: 写上传服务失败测试**
+- [x] **Step 1: 写上传服务失败测试**
 
 ```python
 def test_upload_service_creates_project(service):
@@ -209,12 +209,12 @@ def test_upload_service_creates_project(service):
     assert project.source_path.endswith("source.txt")
 ```
 
-- [ ] **Step 2: 运行并确认路由不存在**
+- [x] **Step 2: 运行并确认路由不存在**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/projects/test_service.py::test_upload_service_creates_project -v`
 Expected: FAIL with `ImportError: ProjectUploadService`.
 
-- [ ] **Step 3: 实现上传服务和 API DTO**
+- [x] **Step 3: 实现上传服务和 API DTO**
 
 ```python
 class ProjectUploadService:
@@ -236,7 +236,7 @@ class ProjectUploadService:
 
 列表和删除路由在本任务注册。上传错误类型先由服务层保留，Task 3 的 multipart 路由负责映射为 HTTP 状态。在 `apps/api/pyproject.toml` 运行时依赖中加入 `python-multipart>=0.0.20,<1`，供 Task 3 解析上传。
 
-- [ ] **Step 4: 写并实现项目删除测试**
+- [x] **Step 4: 写并实现项目删除测试**
 
 ```python
 def test_delete_user_project_cleans_all_stores(service, graph_writer):
@@ -253,12 +253,12 @@ def test_delete_builtin_project_is_forbidden(service):
 
 删除顺序固定为标记 `DELETING`、删除 Neo4j 项目数据、删除项目文件、删除 SQLite 行。重复调用已删除项目返回成功。Neo4j 查询必须参数化：`MATCH (n {project_id: $project_id}) DETACH DELETE n`。
 
-- [ ] **Step 5: 运行项目 API 测试**
+- [x] **Step 5: 运行项目 API 测试**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/projects -v`
 Expected: PASS.
 
-- [ ] **Step 6: 提交**
+- [x] **Step 6: 提交**
 
 ```bash
 git add apps/api/pyproject.toml apps/api/src/app/projects apps/api/src/app/graph/neo4j.py apps/api/src/app/main.py apps/api/tests/projects
@@ -290,7 +290,7 @@ git commit -m "feat: add project upload and deletion APIs"
 - Consumes: 项目 ID、模型档案 ID 和 SQLite engine。
 - Produces: `JobStatus`、`JobRepository.claim_next(worker_id, lease_seconds)`、`JobService` 控制方法、`WorkerRunner.run_once()`、`POST /api/projects/upload` 和任务 HTTP/SSE API。
 
-- [ ] **Step 1: 写状态转换和租约失败测试**
+- [x] **Step 1: 写状态转换和租约失败测试**
 
 ```python
 def test_illegal_transition_is_rejected():
@@ -305,12 +305,12 @@ def test_expired_lease_can_be_reclaimed(repository, clock):
     assert repository.claim_next("w-2", 30).id == job.id
 ```
 
-- [ ] **Step 2: 运行并确认 jobs 模块缺失**
+- [x] **Step 2: 运行并确认 jobs 模块缺失**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/jobs/test_repository.py -v`
 Expected: FAIL with `ModuleNotFoundError: app.jobs`.
 
-- [ ] **Step 3: 实现状态机和原子领取**
+- [x] **Step 3: 实现状态机和原子领取**
 
 ```python
 class JobStatus(StrEnum):
@@ -340,7 +340,7 @@ ALLOWED = {
 
 `claim_next()` 使用 SQLite `BEGIN IMMEDIATE`，只领取 `QUEUED` 或租约过期且非终止状态的任务，并原子更新 `worker_id`、`lease_expires_at` 和 `updated_at`。
 
-- [ ] **Step 4: 写任务控制和 SSE 测试**
+- [x] **Step 4: 写任务控制和 SSE 测试**
 
 ```python
 def test_pause_resume_and_retry(client, queued_job):
@@ -374,7 +374,7 @@ def test_upload_creates_project_and_queued_job(client):
 
 路由先校验标题 1–300 字和模型档案允许列表，再调用 `ProjectUploadService.create()` 与 `JobRepository.create()`；若任务创建失败，调用项目删除服务回滚项目。上传错误映射为 `413 FILE_TOO_LARGE`、`415 TXT_ONLY/UNSUPPORTED_ENCODING` 或 `422 EMPTY_FILE`。
 
-- [ ] **Step 5: 实现 Worker 单轮编排与重启测试**
+- [x] **Step 5: 实现 Worker 单轮编排与重启测试**
 
 ```python
 def test_runner_does_not_repeat_completed_stage(repository, runner):
@@ -387,12 +387,12 @@ def test_runner_does_not_repeat_completed_stage(repository, runner):
 
 `WorkerRunner.run_once()` 领取一个任务，从当前持久化阶段调用对应处理器；每完成一个阶段立即写入下一状态并续租。捕获异常时使用错误分类器决定重试片段或将任务标记为 `FAILED`，事件只保存稳定错误码。
 
-- [ ] **Step 6: 运行任务和 Worker 测试**
+- [x] **Step 6: 运行任务和 Worker 测试**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/jobs apps/api/tests/worker -v`
 Expected: PASS.
 
-- [ ] **Step 7: 提交**
+- [x] **Step 7: 提交**
 
 ```bash
 git add apps/api/src/app/jobs apps/api/src/app/worker apps/api/src/app/projects apps/api/src/app/main.py apps/api/tests/jobs apps/api/tests/projects/test_router.py apps/api/tests/worker
@@ -412,7 +412,7 @@ git commit -m "feat: add resumable extraction jobs"
 - Consumes: 规范化 UTF-8 文本。
 - Produces: `Chapter(number, title, start_offset, end_offset, text)`、`TextChunk(id, chapter_number, start_offset, end_offset, text)` 和 `split_document(text, max_chars, overlap_chars)`。
 
-- [ ] **Step 1: 写章节与绝对偏移测试**
+- [x] **Step 1: 写章节与绝对偏移测试**
 
 ```python
 def test_split_document_preserves_absolute_offsets():
@@ -429,12 +429,12 @@ def test_document_without_headings_falls_back_to_body_chunks():
     assert result.chunks
 ```
 
-- [ ] **Step 2: 运行并确认 splitter 缺失**
+- [x] **Step 2: 运行并确认 splitter 缺失**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/extraction/test_splitter.py -v`
 Expected: FAIL with `ModuleNotFoundError`.
 
-- [ ] **Step 3: 实现确定性切分**
+- [x] **Step 3: 实现确定性切分**
 
 章节标题支持 `第[零一二三四五六七八九十百千0-9]+[章节回]`。前置文本归为“序言”；没有标题时全部归为“正文”。切片优先在空行和句号处分界，无法找到边界时按字符上限切分；每个新片段最多向前重叠 `overlap_chars`，但不得越过章节起点。
 
@@ -452,14 +452,14 @@ class TextChunk:
             raise ValueError("CHUNK_OFFSET_MISMATCH")
 ```
 
-- [ ] **Step 4: 添加边界测试并运行**
+- [x] **Step 4: 添加边界测试并运行**
 
 覆盖 CRLF、UTF-8-BOM 已移除文本、超长单段、重复章节名、重叠不跨章节和空白正文。
 
 Run: `.venv/bin/python -m pytest apps/api/tests/extraction/test_splitter.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add apps/api/src/app/extraction apps/api/tests/extraction/test_splitter.py
@@ -487,7 +487,7 @@ git commit -m "feat: split uploaded novels into traceable chunks"
 - Consumes: `TextChunk` 和本体目录。
 - Produces: `ExtractionProvider.extract(request) -> ExtractionResult`、`ProviderRegistry` 和 `GET /api/model-profiles`。
 
-- [ ] **Step 1: 写恶意与越界模型输出测试**
+- [x] **Step 1: 写恶意与越界模型输出测试**
 
 ```python
 def test_extraction_result_rejects_excessive_entities():
@@ -501,12 +501,12 @@ def test_evidence_offsets_must_be_inside_chunk():
         CandidateEvidence(start=0, end=999, quote="越界", chunk_length=10)
 ```
 
-- [ ] **Step 2: 运行并确认模型类型缺失**
+- [x] **Step 2: 运行并确认模型类型缺失**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/extraction/test_models.py -v`
 Expected: FAIL with import error.
 
-- [ ] **Step 3: 实现严格候选 Schema**
+- [x] **Step 3: 实现严格候选 Schema**
 
 ```python
 class CandidateEntity(BaseModel):
@@ -525,7 +525,7 @@ class ExtractionResult(BaseModel):
 
 证据使用片段局部 `start`、`end` 和 `quote`；验证器检查 `0 <= start < end <= chunk_length`、引文长度不超过 500。
 
-- [ ] **Step 4: 写 OpenAI 与 Ollama 契约测试**
+- [x] **Step 4: 写 OpenAI 与 Ollama 契约测试**
 
 ```python
 def test_openai_provider_uses_json_schema(httpx_mock, request):
@@ -546,16 +546,16 @@ def test_ollama_provider_uses_structured_format(httpx_mock, request):
 
 将 `pytest-httpx` 加入 dev 依赖。适配器统一设置连接/读取超时、禁止无限响应体，并将 429/5xx/网络超时分类为可重试错误；401/403、模型不存在和 Schema 错误分类为永久或配置错误。
 
-- [ ] **Step 5: 实现环境档案和只读 API**
+- [x] **Step 5: 实现环境档案和只读 API**
 
 `Settings` 支持 `MODEL_PROFILES_JSON`，每个档案包含 `id`、`provider`、`base_url`、`model`、`api_key_env`、`timeout_seconds`。`ProviderRegistry` 只在 Worker 解析 `api_key_env` 指向的环境变量；API 返回时移除 `api_key_env` 并只给出 `available: bool`。
 
-- [ ] **Step 6: 运行适配层测试**
+- [x] **Step 6: 运行适配层测试**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/extraction/test_models.py apps/api/tests/extraction/test_providers.py apps/api/tests/extraction/test_provider_contracts.py -v`
 Expected: PASS and captured logs do not contain `secret`.
 
-- [ ] **Step 7: 提交**
+- [x] **Step 7: 提交**
 
 ```bash
 git add apps/api/pyproject.toml apps/api/src/app/extraction apps/api/src/app/settings.py apps/api/src/app/main.py apps/api/tests/extraction
@@ -583,7 +583,7 @@ git commit -m "feat: add structured extraction providers"
 - Consumes: Task 4 的 `TextChunk`、Task 5 的 `ExtractionResult`、现有 `GraphImporter`。
 - Produces: `normalize_chunk_result()`、`ExtractionPipeline.process_job()`、在线 `GraphDocument` 和 `GET /api/jobs/{id}/quality`。
 
-- [ ] **Step 1: 写本体与证据拒绝测试**
+- [x] **Step 1: 写本体与证据拒绝测试**
 
 ```python
 def test_normalizer_rejects_unknown_type_and_quote_mismatch(chunk, catalog):
@@ -601,18 +601,18 @@ def test_same_name_with_deterministic_alias_merges(candidate_batch):
     assert len(resolved.entities) == 1
 ```
 
-- [ ] **Step 2: 运行并确认归一化函数缺失**
+- [x] **Step 2: 运行并确认归一化函数缺失**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/extraction/test_normalize.py -v`
 Expected: FAIL with import error.
 
-- [ ] **Step 3: 实现稳定标识和保守消歧**
+- [x] **Step 3: 实现稳定标识和保守消歧**
 
 稳定实体 ID 为 `project_id:type:slug(normalized_name)`；事实 ID 为 `sha256(project_id|relation|source_id|target_id|from_chapter|to_chapter)`。只合并规范名相同或明确别名映射的实体；同名但类型或上下文冲突时生成带短哈希后缀的候选 ID，并计入 `ambiguous_entities`。
 
 证据局部偏移换算为 `chunk.start_offset + local_offset`，随后验证源文本切片等于 quote；不一致时拒绝该证据及依赖它的事实。
 
-- [ ] **Step 4: 写完整流水线幂等测试**
+- [x] **Step 4: 写完整流水线幂等测试**
 
 ```python
 def test_fixed_provider_pipeline_is_idempotent(pipeline, graph_repository, uploaded_project):
@@ -626,7 +626,7 @@ def test_fixed_provider_pipeline_is_idempotent(pipeline, graph_repository, uploa
 
 流水线必须逐片保存成功结果，失败片段记录尝试和错误码。跨片段合并完成后构造现有 `GraphDocument`，复用 `GraphImporter` 写入，不另建图写入逻辑。
 
-- [ ] **Step 5: 实现质量报告 API**
+- [x] **Step 5: 实现质量报告 API**
 
 ```python
 class QualityReport(BaseModel):
@@ -644,12 +644,12 @@ class QualityReport(BaseModel):
 
 `GET /api/jobs/{id}/quality` 仅对 `COMPLETED`、`FAILED` 或 `CANCELLED` 任务返回报告；构建中返回 `409 QUALITY_NOT_READY`。
 
-- [ ] **Step 6: 运行固定模型到 Neo4j 集成测试**
+- [x] **Step 6: 运行固定模型到 Neo4j 集成测试**
 
 Run: `RUN_NEO4J_INTEGRATION=1 .venv/bin/python -m pytest apps/api/tests/extraction/test_live_pipeline.py -v`
 Expected: PASS with project-scoped entities, facts and evidence queryable.
 
-- [ ] **Step 7: 提交**
+- [x] **Step 7: 提交**
 
 ```bash
 git add apps/api/src/app/extraction apps/api/src/app/worker apps/api/src/app/graph apps/api/src/app/jobs apps/api/tests/extraction apps/api/tests/jobs
@@ -681,7 +681,7 @@ git commit -m "feat: build validated project graphs online"
 - Consumes: Tasks 2、3、5、6 的项目、任务、档案、SSE 和质量 API。
 - Produces: 上传—监控—结果 UI，以及图谱、故事线和问答共享的 `useProject()`。
 
-- [ ] **Step 1: 写项目 URL 恢复测试**
+- [x] **Step 1: 写项目 URL 恢复测试**
 
 ```tsx
 it('restores the selected project from the URL', async () => {
@@ -691,12 +691,12 @@ it('restores the selected project from the URL', async () => {
 })
 ```
 
-- [ ] **Step 2: 运行并确认 ProjectContext 缺失**
+- [x] **Step 2: 运行并确认 ProjectContext 缺失**
 
 Run: `npm --prefix apps/web test -- --run src/app/ProjectContext.test.tsx`
 Expected: FAIL with unresolved import.
 
-- [ ] **Step 3: 实现项目上下文和切换器**
+- [x] **Step 3: 实现项目上下文和切换器**
 
 ```tsx
 type ProjectContextValue = {
@@ -715,7 +715,7 @@ export function useProject(): ProjectContextValue {
 
 默认项目为 URL `project` 参数，否则使用 `xiaoao`。切换时使用 `history.replaceState` 保留当前路由并更新参数。Graph、Story、Ask 移除固定 `PROJECT_ID`，统一读取上下文。
 
-- [ ] **Step 4: 写上传和任务恢复测试**
+- [x] **Step 4: 写上传和任务恢复测试**
 
 ```tsx
 it('uploads a novel and restores progress after remount', async () => {
@@ -732,20 +732,20 @@ it('uploads a novel and restores progress after remount', async () => {
 })
 ```
 
-- [ ] **Step 5: 实现三段构建工作台**
+- [x] **Step 5: 实现三段构建工作台**
 
 `UploadStep` 使用 `FormData`，客户端提前检查 `.txt` 与 20 MB，但服务端仍是权威。`JobProgress` 使用 `EventSource`，每个事件覆盖本地任务快照；`error` 时关闭连接并退回每 2 秒请求 `GET /api/jobs/{id}`，任务终止后停止轮询。控制按钮只在状态允许时显示。
 
 `QualityReport` 显示指标、拒绝原因和“进入项目图谱”；点击后设置当前项目并导航到 `/graph?project=<id>`。
 
-- [ ] **Step 6: 添加错误与无障碍测试**
+- [x] **Step 6: 添加错误与无障碍测试**
 
 覆盖上传失败、模型档案不可用、暂停/恢复、失败重试、SSE 重连、按钮禁用、进度条 `aria-valuenow` 和错误 `role=alert`。
 
 Run: `npm --prefix apps/web test -- --run`
 Expected: PASS.
 
-- [ ] **Step 7: 运行类型检查与生产构建**
+- [x] **Step 7: 运行类型检查与生产构建**
 
 Run: `npm --prefix apps/web run typecheck && npm --prefix apps/web run build`
 Expected: both exit 0; no new chunk exceeds the existing graph-engine chunk by more than 100 kB.
@@ -777,7 +777,7 @@ git commit -m "feat: add online graph build workspace"
 - Consumes: Tasks 1–7 全部运行接口。
 - Produces: `docker compose up --build` 的 web/api/worker/neo4j 栈、可选真实模型冒烟命令和最终 `make verify`。
 
-- [ ] **Step 1: 写在线构建 E2E 测试**
+- [x] **Step 1: 写在线构建 E2E 测试**
 
 ```ts
 test('uploads, builds and explores an isolated graph', async ({ page }) => {
@@ -795,12 +795,12 @@ test('uploads, builds and explores an isolated graph', async ({ page }) => {
 })
 ```
 
-- [ ] **Step 2: 运行并确认 Compose/Worker 尚未编排而失败**
+- [x] **Step 2: 运行并确认 Compose/Worker 尚未编排而失败**
 
 Run: `npm --prefix tests/e2e test -- online-build.spec.ts`
 Expected: FAIL because `/build` still lacks a running Worker-backed completion path.
 
-- [ ] **Step 3: 编排四服务与共享卷**
+- [x] **Step 3: 编排四服务与共享卷**
 
 `compose.yaml` 新增：
 
@@ -860,7 +860,7 @@ export default defineConfig({
 })
 ```
 
-- [ ] **Step 4: 扩展验证命令与真实模型冒烟入口**
+- [x] **Step 4: 扩展验证命令与真实模型冒烟入口**
 
 `make verify` 顺序为：Compose 健康启动、固定数据导入、后端全测试、前端测试、类型检查、生产构建、证据校验和全部 Playwright。新增：
 
@@ -877,16 +877,16 @@ smoke-ollama:
 
 冒烟测试缺少相应档案或密钥时明确 skip，不进入默认 `verify`。
 
-- [ ] **Step 5: 写 `.env.example` 与 README**
+- [x] **Step 5: 写 `.env.example` 与 README**
 
 文档必须列出 `DATA_ROOT`、`MODEL_PROFILES_JSON`、OpenAI 密钥变量和 Ollama 地址示例；说明密钥只设置在 Worker 环境；给出本地进程运行、Compose 运行、项目删除、失败重试、两种冒烟测试和数据卷备份命令。样例中使用占位值，不能包含真实密钥。
 
-- [ ] **Step 6: 从冷启动运行完整验收**
+- [x] **Step 6: 从冷启动运行完整验收**
 
 Run: `docker compose down && make verify`
 Expected: backend tests、frontend tests、typecheck、build、evidence validation、Phase 1 E2E and online-build E2E all exit 0.
 
-- [ ] **Step 7: 执行密钥与原文泄漏检查**
+- [x] **Step 7: 执行密钥与原文泄漏检查**
 
 Run: `git grep -n -E 'sk-[A-Za-z0-9_-]{20,}|Bearer [A-Za-z0-9_-]{20,}' -- ':!docs/superpowers/plans/*'`
 Expected: no output.
@@ -894,7 +894,7 @@ Expected: no output.
 Run: `git ls-files '笑傲江湖/**'`
 Expected: no output.
 
-- [ ] **Step 8: 提交**
+- [x] **Step 8: 提交**
 
 ```bash
 git add apps/api/Dockerfile apps/web/Dockerfile apps/web/nginx.conf compose.yaml Makefile .env.example README.md tests/e2e

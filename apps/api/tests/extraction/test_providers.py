@@ -1,6 +1,7 @@
 import pytest
 
 from app.extraction.fixed import FixedProvider
+from app.extraction.models import ExtractionRequest
 from app.extraction.ollama import OllamaProvider
 from app.extraction.openai_compatible import OpenAICompatibleProvider
 from app.extraction.providers import ProviderError, ProviderRegistry
@@ -40,3 +41,15 @@ def test_registry_rejects_missing_secret(monkeypatch):
     )))
     with pytest.raises(ProviderError, match="MODEL_API_KEY_MISSING"):
         registry.create("openai:test")
+
+
+def test_fixed_provider_extracts_deterministic_e2e_fixture():
+    text = "第一章 相遇\n测试人物甲认识测试人物乙。"
+    result = FixedProvider().extract(ExtractionRequest(
+        project_id="project-1", chunk_id="chunk-1", text=text, ontology={}
+    ))
+
+    assert [entity.name for entity in result.entities] == ["测试人物甲", "测试人物乙"]
+    assert result.facts[0].relation == "KNOWS"
+    evidence = result.facts[0].evidence
+    assert text[evidence.start:evidence.end] == evidence.quote
