@@ -750,7 +750,7 @@ Expected: PASS.
 Run: `npm --prefix apps/web run typecheck && npm --prefix apps/web run build`
 Expected: both exit 0; no new chunk exceeds the existing graph-engine chunk by more than 100 kB.
 
-- [ ] **Step 8: 提交**
+- [x] **Step 8: 提交**
 
 ```bash
 git add apps/web/src
