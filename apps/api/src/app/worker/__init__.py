@@ -1,0 +1,1 @@
+"""Background extraction worker."""

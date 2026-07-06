@@ -1,0 +1,1 @@
+"""Novel text extraction pipeline."""
