@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import Engine, func, or_, select, text
 from sqlalchemy.orm import Session
 
-from app.jobs.models import Job, JobEvent, JobStatus, TERMINAL_STATUSES
+from app.jobs.models import Job, JobEvent, JobQuality, JobStatus, TERMINAL_STATUSES
 from app.projects.models import Base
 
 
@@ -94,6 +94,21 @@ class JobRepository:
             for event in events:
                 session.expunge(event)
             return events
+
+    def save_quality(self, job_id: str, report: dict) -> None:
+        with Session(self.engine) as session:
+            quality = session.get(JobQuality, job_id)
+            if quality is None:
+                quality = JobQuality(job_id=job_id, report=report)
+                session.add(quality)
+            else:
+                quality.report = report
+            session.commit()
+
+    def get_quality(self, job_id: str) -> dict | None:
+        with Session(self.engine) as session:
+            quality = session.get(JobQuality, job_id)
+            return None if quality is None else dict(quality.report)
 
     def _append_event(self, job_id: str) -> None:
         with Session(self.engine) as session:

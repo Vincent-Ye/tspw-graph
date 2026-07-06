@@ -94,3 +94,12 @@ class JobEvent(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
     )
+
+
+class JobQuality(Base):
+    __tablename__ = "job_quality"
+
+    job_id: Mapped[str] = mapped_column(
+        ForeignKey("jobs.id", ondelete="CASCADE"), primary_key=True
+    )
+    report: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)

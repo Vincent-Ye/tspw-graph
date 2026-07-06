@@ -11,7 +11,7 @@ from sqlalchemy import create_engine
 
 from app.jobs.models import InvalidJobTransition, Job, JobStatus, TERMINAL_STATUSES
 from app.jobs.repository import JobRepository
-from app.jobs.service import JobNotFoundError, JobService
+from app.jobs.service import JobNotFoundError, JobService, QualityNotReadyError
 from app.settings import get_settings
 
 router = APIRouter(prefix="/api/jobs", tags=["jobs"])
@@ -70,6 +70,16 @@ def cancel(job_id: str, service: Service) -> JobSnapshot:
 @router.post("/{job_id}/retry", response_model=JobSnapshot)
 def retry(job_id: str, service: Service) -> JobSnapshot:
     return execute(lambda: service.retry(job_id))
+
+
+@router.get("/{job_id}/quality")
+def quality(job_id: str, service: Service) -> dict:
+    try:
+        return service.quality(job_id)
+    except JobNotFoundError as error:
+        raise HTTPException(404, detail={"code": "JOB_NOT_FOUND"}) from error
+    except QualityNotReadyError as error:
+        raise HTTPException(409, detail={"code": "QUALITY_NOT_READY"}) from error
 
 
 @router.get("/{job_id}/events")
