@@ -84,6 +84,17 @@ class Neo4jGraphWriter:
             for statement in CONSTRAINTS:
                 session.run(statement).consume()
 
+    def delete_project(self, project_id: str) -> None:
+        with self.driver.session() as session:
+            session.run(
+                "MATCH (n {project_id: $project_id}) DETACH DELETE n",
+                project_id=project_id,
+            ).consume()
+            session.run(
+                "MATCH (p:Project {id: $project_id}) DETACH DELETE p",
+                project_id=project_id,
+            ).consume()
+
     def upsert_batch(self, label: str, rows: list[dict[str, Any]]) -> int:
         if label not in UPSERT_QUERIES:
             raise ValueError(f"unsupported graph label: {label}")
