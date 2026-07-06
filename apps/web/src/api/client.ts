@@ -1,4 +1,4 @@
-export const PROJECT_ID = 'xiaoao'
+export const DEFAULT_PROJECT_ID = 'xiaoao'
 
 export type EntitySummary = {
   id: string
@@ -56,12 +56,19 @@ export type AskResponse = {
   evidence: Evidence[]
 }
 
+export type ProjectSummary = { id: string; title: string; is_builtin: boolean; source_encoding?: string; source_size?: number; created_at: string; updated_at: string }
+export type ModelProfile = { id: string; provider: string; base_url: string; model: string; timeout_seconds: number; available: boolean }
+export type JobSnapshot = { id: string; project_id: string; model_profile_id: string; status: string; completed_chunks: number; total_chunks: number; error_code?: string }
+export type ProjectCreated = { project: ProjectSummary; job: JobSnapshot }
+export type QualityReport = { total_chunks: number; successful_chunks: number; failed_chunks: number; accepted_entities: number; accepted_facts: number; accepted_evidence: number; ambiguous_entities: number; rejected_by_code: Record<string, number>; model_calls: number; retry_count: number }
+
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers)
+  if (!(init?.body instanceof FormData)) headers.set('Content-Type', 'application/json')
   const response = await fetch(path, {
     ...init,
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
+    headers,
   })
   if (!response.ok) throw new Error(`请求失败（${response.status}）`)
   return response.json() as Promise<T>
 }
-
