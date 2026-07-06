@@ -8,7 +8,9 @@ from sqlalchemy.pool import StaticPool
 from app.projects.files import UploadStore
 from app.projects.repository import ProjectRepository
 from app.projects.router import get_project_service, router
+from app.projects.router import get_job_repository, get_upload_service
 from app.projects.service import ProjectService, ProjectUploadService
+from app.jobs.repository import JobRepository
 
 
 class FakeGraphWriter:
@@ -33,6 +35,12 @@ def make_client(tmp_path) -> tuple[TestClient, ProjectRepository]:
     app = FastAPI()
     app.include_router(router)
     app.dependency_overrides[get_project_service] = lambda: service
+    app.dependency_overrides[get_upload_service] = lambda: ProjectUploadService(
+        repository, uploads
+    )
+    app.dependency_overrides[get_job_repository] = lambda: JobRepository(
+        repository.engine
+    )
     return TestClient(app), repository
 
 
@@ -53,3 +61,31 @@ def test_delete_is_idempotent_and_builtin_is_forbidden(tmp_path):
     response = client.delete("/api/projects/xiaoao")
     assert response.status_code == 403
     assert response.json()["detail"]["code"] == "BUILTIN_PROJECT_READ_ONLY"
+
+
+def test_upload_creates_project_and_queued_job(tmp_path):
+    client, _ = make_client(tmp_path)
+    response = client.post(
+        "/api/projects/upload",
+        data={"title": "上传小说", "model_profile_id": "fixed:test"},
+        files={"file": ("upload.txt", "第一章\n测试人物出现。".encode(), "text/plain")},
+    )
+    assert response.status_code == 201
+    assert response.json()["project"]["title"] == "上传小说"
+    assert response.json()["job"]["status"] == "QUEUED"
+
+
+def test_upload_rejects_unknown_profile_and_wrong_type(tmp_path):
+    client, _ = make_client(tmp_path)
+    unknown = client.post(
+        "/api/projects/upload",
+        data={"title": "上传小说", "model_profile_id": "unknown"},
+        files={"file": ("upload.txt", b"text", "text/plain")},
+    )
+    assert unknown.status_code == 422
+    wrong_type = client.post(
+        "/api/projects/upload",
+        data={"title": "上传小说", "model_profile_id": "fixed:test"},
+        files={"file": ("upload.pdf", b"text", "application/pdf")},
+    )
+    assert wrong_type.status_code == 415
