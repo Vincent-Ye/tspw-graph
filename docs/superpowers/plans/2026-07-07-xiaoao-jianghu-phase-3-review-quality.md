@@ -97,7 +97,7 @@ E2E 和文档：
   - `ReviewRepository.list_items(project_id: str, status: ReviewItemStatus | None, item_type: ReviewItemType | None, limit: int, cursor: str | None) -> list[ReviewItemRead]`
   - `RuleScanner.scan_candidates(project_id: str, facts: list[FactCandidate], entities: list[dict[str, Any]]) -> list[ReviewItemCreate]`
 
-- [ ] **Step 1: Write failing repository tests**
+- [x] **Step 1: Write failing repository tests**
 
 Create `apps/api/tests/review/test_repository.py`:
 
@@ -167,13 +167,13 @@ def test_list_items_filters_by_status_and_type():
     assert [row.reason_code for row in rows] == ["POSSIBLE_DUPLICATE_ENTITY"]
 ```
 
-- [ ] **Step 2: Run repository tests and confirm failure**
+- [x] **Step 2: Run repository tests and confirm failure**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/review/test_repository.py -v`
 
 Expected: FAIL with `ModuleNotFoundError: No module named 'app.review'`.
 
-- [ ] **Step 3: Implement review models and repository**
+- [x] **Step 3: Implement review models and repository**
 
 Create `apps/api/src/app/review/__init__.py` as an empty package file.
 
@@ -468,13 +468,13 @@ def session_rows(session_factory: sessionmaker, statement):
         return list(session.scalars(statement))
 ```
 
-- [ ] **Step 4: Run repository tests**
+- [x] **Step 4: Run repository tests**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/review/test_repository.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 5: Write failing rule scanner tests**
+- [x] **Step 5: Write failing rule scanner tests**
 
 Create `apps/api/tests/review/test_rules.py`:
 
@@ -524,13 +524,13 @@ def test_rule_scanner_flags_low_confidence_missing_evidence_and_duplicates():
     assert duplicate.item_type == ReviewItemType.DUPLICATE_ENTITY
 ```
 
-- [ ] **Step 6: Run rule scanner test and confirm failure**
+- [x] **Step 6: Run rule scanner test and confirm failure**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/review/test_rules.py -v`
 
 Expected: FAIL with `ModuleNotFoundError: No module named 'app.review.rules'`.
 
-- [ ] **Step 7: Implement deterministic rule scanner**
+- [x] **Step 7: Implement deterministic rule scanner**
 
 Create `apps/api/src/app/review/rules.py`:
 
@@ -617,13 +617,13 @@ def relation_by_id(relation_id: str) -> Relation | None:
     return next((item for item in CATALOG.relation_types if item.id == relation_id), None)
 ```
 
-- [ ] **Step 8: Run review model and rule tests**
+- [x] **Step 8: Run review model and rule tests**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/review/test_repository.py apps/api/tests/review/test_rules.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add apps/api/src/app/review apps/api/src/app/ontology/catalog.py apps/api/tests/review/test_repository.py apps/api/tests/review/test_rules.py
