@@ -891,7 +891,7 @@ git commit -m "feat: apply review status to graph queries"
   - `ReviewActionRequest(action_type: ReviewActionType, payload: dict[str, Any], idempotency_key: str | None = None)`
   - `ReviewActionResult(item: ReviewItemRead, action: ReviewActionRead)`
 
-- [ ] **Step 1: Write failing fact action tests**
+- [x] **Step 1: Write failing fact action tests**
 
 Create `apps/api/tests/review/test_service_facts.py`:
 
@@ -972,13 +972,13 @@ def test_reject_fact_is_idempotent():
     assert graph.rejected == ["project-a:fact-1", "project-a:fact-1"]
 ```
 
-- [ ] **Step 2: Run fact action tests and confirm failure**
+- [x] **Step 2: Run fact action tests and confirm failure**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/review/test_service_facts.py -v`
 
 Expected: FAIL because `app.review.service` does not exist.
 
-- [ ] **Step 3: Implement fact action service**
+- [x] **Step 3: Implement fact action service**
 
 Create or modify `apps/api/src/app/review/service.py`:
 
@@ -1042,13 +1042,13 @@ class ReviewService:
         return value
 ```
 
-- [ ] **Step 4: Run fact action tests**
+- [x] **Step 4: Run fact action tests**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/review/test_service_facts.py apps/api/tests/review/test_repository.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 5: Write QA filtering regression test**
+- [x] **Step 5: Write QA filtering regression test**
 
 Create `apps/api/tests/qa/test_review_filters.py`:
 
@@ -1077,13 +1077,13 @@ def test_qa_ignores_rejected_facts_even_if_repository_returns_them():
     assert response.answer == NO_FACTS
 ```
 
-- [ ] **Step 6: Run QA filtering test and confirm failure**
+- [x] **Step 6: Run QA filtering test and confirm failure**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/qa/test_review_filters.py -v`
 
 Expected: FAIL because `QaService` does not explicitly ignore rejected rows if a repository returns them.
 
-- [ ] **Step 7: Harden QA service against rejected rows**
+- [x] **Step 7: Harden QA service against rejected rows**
 
 Modify `apps/api/src/app/qa/service.py` in the loop over `detail["rows"]`:
 
@@ -1095,13 +1095,13 @@ Modify `apps/api/src/app/qa/service.py` in the loop over `detail["rows"]`:
                 continue
 ```
 
-- [ ] **Step 8: Run QA and review tests**
+- [x] **Step 8: Run QA and review tests**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/review/test_service_facts.py apps/api/tests/qa/test_review_filters.py apps/api/tests/qa/test_service.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add apps/api/src/app/review/service.py apps/api/src/app/qa/service.py apps/api/tests/review/test_service_facts.py apps/api/tests/qa/test_review_filters.py
