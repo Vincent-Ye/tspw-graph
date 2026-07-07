@@ -1299,7 +1299,7 @@ git commit -m "feat: review entity merge and alias split actions"
   - `GET /api/projects/{project_id}/review/audit`
   - `POST /api/projects/{project_id}/review/scan`
 
-- [ ] **Step 1: Write failing router tests**
+- [x] **Step 1: Write failing router tests**
 
 Create `apps/api/tests/review/test_router.py`:
 
@@ -1344,13 +1344,13 @@ def test_manual_review_item_and_action_endpoint():
     assert action.json()["item"]["status"] == "DISMISSED"
 ```
 
-- [ ] **Step 2: Run router tests and confirm failure**
+- [x] **Step 2: Run router tests and confirm failure**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/review/test_router.py -v`
 
 Expected: FAIL with 404 for review endpoints.
 
-- [ ] **Step 3: Add summary, scan and audit service methods**
+- [x] **Step 3: Add summary, scan and audit service methods**
 
 Modify `apps/api/src/app/review/service.py`:
 
@@ -1397,7 +1397,7 @@ class ReviewService:
 
 Do not create a second `ReviewService` class if Task 3 already created it. Merge these methods into the existing class and add imports for `RuleScanner`, `ReviewSummary` and `ReviewScanResult`.
 
-- [ ] **Step 4: Implement review router**
+- [x] **Step 4: Implement review router**
 
 Create `apps/api/src/app/review/router.py`:
 
@@ -1486,19 +1486,19 @@ from app.review.router import router as review_router
 app.include_router(review_router)
 ```
 
-- [ ] **Step 5: Run router tests**
+- [x] **Step 5: Run router tests**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/review/test_router.py apps/api/tests/test_health.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 6: Run all review backend tests**
+- [x] **Step 6: Run all review backend tests**
 
 Run: `RUN_NEO4J_INTEGRATION=1 .venv/bin/python -m pytest apps/api/tests/review apps/api/tests/graph/test_review_filters.py apps/api/tests/qa/test_review_filters.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add apps/api/src/app/review apps/api/src/app/main.py apps/api/tests/review/test_router.py
