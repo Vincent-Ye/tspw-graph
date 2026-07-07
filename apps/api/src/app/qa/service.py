@@ -40,6 +40,8 @@ class QaService:
         if detail is None:
             return self._empty(project_id)
         for row in detail["rows"]:
+            if row.get("review_status") == "REJECTED":
+                continue
             if row.get("type") != template.relation:
                 continue
             if template.entity_role == "source" and row.get("source_id") != entity["id"]:
@@ -99,4 +101,3 @@ class QaService:
             cypher_template="",
             parameters={"project_id": project_id},
         )
-
