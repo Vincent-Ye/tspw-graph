@@ -1892,7 +1892,7 @@ git commit -m "feat: send graph facts to review"
 - Consumes: all review APIs and `/review` page.
 - Produces: full verification gate and version bump to `0.3.0`.
 
-- [ ] **Step 1: Write E2E review workflow test**
+- [x] **Step 1: Write E2E review workflow test**
 
 Create `tests/e2e/review.spec.ts`:
 
@@ -1926,13 +1926,15 @@ test('reviewer scans, accepts and sees audit trail', async ({ page }) => {
 })
 ```
 
-- [ ] **Step 2: Run E2E test and confirm failure before route/API exists**
+- [x] **Step 2: Run E2E test and confirm failure before route/API exists**
+
+Note: route/API already existed by the time Task 8 started, so the original RED precondition was obsolete. The review E2E was covered by final `make verify` instead.
 
 Run: `npm --prefix tests/e2e test -- review.spec.ts`
 
 Expected before full implementation: FAIL due missing `/review` route or review API.
 
-- [ ] **Step 3: Add backend rule fixture for three review item types**
+- [x] **Step 3: Add backend rule fixture for three review item types**
 
 Extend `apps/api/tests/review/test_rules.py` with a deterministic fixture that produces `LOW_CONFIDENCE_FACT`, `MISSING_EVIDENCE`, and `POSSIBLE_DUPLICATE_ENTITY` in one scan. Do not alter production seed data for this requirement.
 
@@ -1959,7 +1961,7 @@ Run: `.venv/bin/python -m pytest apps/api/tests/review/test_rules.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 4: Update README**
+- [x] **Step 4: Update README**
 
 Modify `README.md` with this section:
 
@@ -1978,7 +1980,7 @@ open http://127.0.0.1:5173/review
 ```
 ~~~
 
-- [ ] **Step 5: Bump version to 0.3.0**
+- [x] **Step 5: Bump version to 0.3.0**
 
 Run:
 
@@ -1993,7 +1995,7 @@ Modify `apps/api/pyproject.toml`:
 version = "0.3.0"
 ```
 
-- [ ] **Step 6: Run full verification**
+- [x] **Step 6: Run full verification**
 
 Run:
 
@@ -2011,7 +2013,7 @@ Expected:
 - evidence validation passes;
 - Phase 1 E2E, online-build E2E and review E2E pass.
 
-- [ ] **Step 7: Leak checks**
+- [x] **Step 7: Leak checks**
 
 Run:
 
@@ -2022,7 +2024,7 @@ git ls-files '笑傲江湖/**'
 
 Expected: no output.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add README.md Makefile apps/api apps/web tests/e2e docs/superpowers/plans/2026-07-07-xiaoao-jianghu-phase-3-review-quality.md
