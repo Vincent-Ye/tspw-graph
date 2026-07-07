@@ -5,6 +5,23 @@ from pydantic import BaseModel, Field
 
 from app.review.models import ReviewActionRead, ReviewActionType, ReviewItemRead
 from app.review.repository import ReviewRepository
+from app.review.rules import RuleScanner
+
+
+class ReviewSummary(BaseModel):
+    open_review_items: int
+    accepted_facts: int = 0
+    rejected_facts: int = 0
+    pending_facts: int = 0
+    merged_entities: int = 0
+    split_aliases: int = 0
+    evidence_coverage: float = 0
+    review_completion_rate: float = 0
+    graph_fact_delta_before_after_review: int = 0
+
+
+class ReviewScanResult(BaseModel):
+    created_items: int
 
 
 class ReviewActionRequest(BaseModel):
@@ -22,6 +39,24 @@ class ReviewService:
     def __init__(self, repository: ReviewRepository, graph) -> None:
         self.repository = repository
         self.graph = graph
+
+    def scan(self, project_id: str) -> ReviewScanResult:
+        snapshot = self.graph.review_candidates(project_id)
+        items = RuleScanner().scan_candidates(project_id, snapshot.facts, snapshot.entities)
+        created = 0
+        for item in items:
+            before = self.repository.count_open(project_id)
+            self.repository.create_item_once(project_id, item)
+            after = self.repository.count_open(project_id)
+            if after > before:
+                created += 1
+        return ReviewScanResult(created_items=created)
+
+    def summary(self, project_id: str) -> ReviewSummary:
+        return ReviewSummary(open_review_items=self.repository.count_open(project_id))
+
+    def audit(self, project_id: str, limit: int, cursor: str | None):
+        return self.repository.list_actions(project_id, limit=limit, cursor=cursor)
 
     def apply_action(
         self, project_id: str, item_id: str, request: ReviewActionRequest
