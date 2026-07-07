@@ -21,6 +21,8 @@ docker compose up -d --build --wait
 docker compose down
 ```
 
+完整 Docker 部署和 Azure OpenAI 配置见 [Docker 部署手册](docs/deployment-docker-azure-openai.md)。
+
 ## 本地进程运行
 
 ```bash
@@ -43,7 +45,7 @@ make dev
 | `AZURE_OPENAI_API_KEY` | 无 | Azure OpenAI 档案的密钥 |
 | `NEO4J_URI` | `bolt://localhost:7687` | Neo4j Bolt 地址 |
 
-`.env.example` 含 OpenAI、Azure OpenAI 与 `http://host.docker.internal:11434` Ollama 示例。Azure OpenAI 档案使用 `provider="azure-openai"`，`base_url` 填资源端点，`model` 填部署名，`api_version` 默认可用 `2024-06-01`。档案只保存密钥环境变量名；Compose 仅向 Worker 注入模型密钥，API 容器不获取模型密钥。
+`.env.example` 含 OpenAI、Azure OpenAI 与 `http://host.docker.internal:11434` Ollama 示例。Azure OpenAI 档案使用 `provider="azure-openai"`，`base_url` 填资源端点，`model` 填部署名，`api_version` 默认可用 `2024-06-01`。档案只保存密钥环境变量名；Compose 会向 API 与 Worker 注入模型密钥，API 只用环境变量是否存在来标记模型档案可用，实际模型调用由 Worker 完成。
 
 ## 操作与恢复
 
