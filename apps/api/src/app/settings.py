@@ -11,6 +11,7 @@ class ModelProfileSettings(BaseModel):
     base_url: str = ""
     model: str
     api_key_env: str = ""
+    api_version: str = "2024-06-01"
     timeout_seconds: float = 60
 
 

@@ -3,6 +3,7 @@ import json
 import httpx
 
 from app.extraction.models import ExtractionRequest
+from app.extraction.azure_openai import AzureOpenAIProvider
 from app.extraction.ollama import OllamaProvider
 from app.extraction.openai_compatible import OpenAICompatibleProvider
 
@@ -40,6 +41,32 @@ def test_openai_provider_uses_json_schema_and_bearer_auth():
     body = json.loads(sent.content)
     assert sent.url.path == "/v1/chat/completions"
     assert sent.headers["authorization"] == "Bearer secret"
+    assert body["response_format"]["type"] == "json_schema"
+    assert result.entities[0].name == "令狐冲"
+
+
+def test_azure_openai_provider_uses_deployment_api_version_and_api_key_header():
+    captured = {}
+
+    def handler(http_request: httpx.Request) -> httpx.Response:
+        captured["request"] = http_request
+        return httpx.Response(200, json={"choices": [{"message": {"content": FIXED}}]})
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    result = AzureOpenAIProvider(
+        base_url="https://example.openai.azure.com",
+        deployment="kg-extractor",
+        api_version="2024-06-01",
+        api_key="azure-secret",
+        client=client,
+    ).extract(request())
+
+    sent = captured["request"]
+    body = json.loads(sent.content)
+    assert sent.url.path == "/openai/deployments/kg-extractor/chat/completions"
+    assert sent.url.params["api-version"] == "2024-06-01"
+    assert sent.headers["api-key"] == "azure-secret"
+    assert "authorization" not in sent.headers
     assert body["response_format"]["type"] == "json_schema"
     assert result.entities[0].name == "令狐冲"
 

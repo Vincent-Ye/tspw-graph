@@ -38,11 +38,12 @@ make dev
 | --- | --- | --- |
 | `DATA_ROOT` | `./data/uploads` | 上传原文存储根目录 |
 | `SQLITE_URL` | `sqlite:///./tspw-graph.db` | 项目、任务和质量报告 |
-| `MODEL_PROFILES_JSON` | 内置 `fixed:test` | OpenAI 兼容接口、Ollama 或测试模型档案 |
+| `MODEL_PROFILES_JSON` | 内置 `fixed:test` | OpenAI 兼容接口、Azure OpenAI、Ollama 或测试模型档案 |
 | `OPENAI_API_KEY` | 无 | OpenAI 兼容档案的密钥 |
+| `AZURE_OPENAI_API_KEY` | 无 | Azure OpenAI 档案的密钥 |
 | `NEO4J_URI` | `bolt://localhost:7687` | Neo4j Bolt 地址 |
 
-`.env.example` 含 OpenAI 与 `http://host.docker.internal:11434` Ollama 示例。档案只保存密钥环境变量名；Compose 仅向 Worker 注入 `OPENAI_API_KEY`，API 容器不获取模型密钥。
+`.env.example` 含 OpenAI、Azure OpenAI 与 `http://host.docker.internal:11434` Ollama 示例。Azure OpenAI 档案使用 `provider="azure-openai"`，`base_url` 填资源端点，`model` 填部署名，`api_version` 默认可用 `2024-06-01`。档案只保存密钥环境变量名；Compose 仅向 Worker 注入模型密钥，API 容器不获取模型密钥。
 
 ## 操作与恢复
 

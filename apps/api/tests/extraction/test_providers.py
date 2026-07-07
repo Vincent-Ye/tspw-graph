@@ -2,6 +2,7 @@ import pytest
 
 from app.extraction.fixed import FixedProvider
 from app.extraction.models import ExtractionRequest
+from app.extraction.azure_openai import AzureOpenAIProvider
 from app.extraction.ollama import OllamaProvider
 from app.extraction.openai_compatible import OpenAICompatibleProvider
 from app.extraction.providers import ProviderError, ProviderRegistry
@@ -20,6 +21,12 @@ def test_registry_builds_all_supported_providers(monkeypatch):
             model="demo", api_key_env="TEST_MODEL_KEY"
         ))
     ).create("openai:test")
+    azure = ProviderRegistry(
+        settings_with(ModelProfileSettings(
+            id="azure:test", provider="azure-openai", base_url="https://fake.openai.azure.com",
+            model="deployment", api_key_env="TEST_MODEL_KEY", api_version="2024-06-01"
+        ))
+    ).create("azure:test")
     ollama = ProviderRegistry(
         settings_with(ModelProfileSettings(
             id="ollama:test", provider="ollama", base_url="http://fake", model="qwen3"
@@ -29,6 +36,7 @@ def test_registry_builds_all_supported_providers(monkeypatch):
         settings_with(ModelProfileSettings(id="fixed:test", provider="fixed", model="test"))
     ).create("fixed:test")
     assert isinstance(openai, OpenAICompatibleProvider)
+    assert isinstance(azure, AzureOpenAIProvider)
     assert isinstance(ollama, OllamaProvider)
     assert isinstance(fixed, FixedProvider)
 

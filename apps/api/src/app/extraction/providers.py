@@ -56,6 +56,16 @@ class ProviderRegistry:
                 api_key=self.secret_for(profile) or "",
                 timeout_seconds=profile.timeout_seconds,
             )
+        if profile.provider == "azure-openai":
+            from app.extraction.azure_openai import AzureOpenAIProvider
+
+            return AzureOpenAIProvider(
+                base_url=profile.base_url,
+                deployment=profile.model,
+                api_version=profile.api_version,
+                api_key=self.secret_for(profile) or "",
+                timeout_seconds=profile.timeout_seconds,
+            )
         if profile.provider == "ollama":
             from app.extraction.ollama import OllamaProvider
 
