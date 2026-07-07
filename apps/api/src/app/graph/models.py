@@ -86,6 +86,8 @@ class EntitySummary(BaseModel):
     name: str
     aliases: list[str] = Field(default_factory=list)
     description: str = ""
+    review_status: str | None = None
+    merged_into: str | None = None
 
 
 class GraphEdge(BaseModel):
@@ -96,6 +98,7 @@ class GraphEdge(BaseModel):
     from_chapter: int | None = None
     to_chapter: int | None = None
     confidence: float = 1.0
+    review_status: str | None = None
 
 
 class Neighborhood(BaseModel):
@@ -118,6 +121,7 @@ class RelatedFact(BaseModel):
     type: str
     source_id: str
     target_id: str
+    review_status: str | None = None
     evidence: list[EvidenceDetail] = Field(default_factory=list)
 
 

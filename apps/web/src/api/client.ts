@@ -62,6 +62,44 @@ export type JobSnapshot = { id: string; project_id: string; model_profile_id: st
 export type ProjectCreated = { project: ProjectSummary; job: JobSnapshot }
 export type QualityReport = { total_chunks: number; successful_chunks: number; failed_chunks: number; accepted_entities: number; accepted_facts: number; accepted_evidence: number; ambiguous_entities: number; rejected_by_code: Record<string, number>; model_calls: number; retry_count: number }
 
+export type ReviewSummary = {
+  open_review_items: number
+  accepted_facts: number
+  rejected_facts: number
+  pending_facts: number
+  merged_entities: number
+  split_aliases: number
+  evidence_coverage: number
+  review_completion_rate: number
+  graph_fact_delta_before_after_review: number
+}
+
+export type ReviewItem = {
+  id: string
+  project_id?: string
+  item_type: 'FACT' | 'DUPLICATE_ENTITY' | 'ALIAS_SPLIT'
+  status: 'OPEN' | 'RESOLVED' | 'DISMISSED'
+  source: 'rule' | 'model' | 'manual'
+  reason_code: string
+  target: Record<string, string>
+  evidence_ids: string[]
+  severity: number
+}
+
+export type ReviewActionRequest = {
+  action_type: 'accept_fact' | 'reject_fact' | 'merge_entities' | 'split_alias' | 'dismiss_item'
+  payload: Record<string, string>
+  idempotency_key?: string
+}
+
+export type ReviewAction = {
+  id: string
+  reviewer: string
+  action_type: string
+  payload: Record<string, string>
+  created_at: string
+}
+
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers)
   if (!(init?.body instanceof FormData)) headers.set('Content-Type', 'application/json')

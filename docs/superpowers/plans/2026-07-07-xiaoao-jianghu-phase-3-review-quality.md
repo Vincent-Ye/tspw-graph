@@ -97,7 +97,7 @@ E2E 和文档：
   - `ReviewRepository.list_items(project_id: str, status: ReviewItemStatus | None, item_type: ReviewItemType | None, limit: int, cursor: str | None) -> list[ReviewItemRead]`
   - `RuleScanner.scan_candidates(project_id: str, facts: list[FactCandidate], entities: list[dict[str, Any]]) -> list[ReviewItemCreate]`
 
-- [ ] **Step 1: Write failing repository tests**
+- [x] **Step 1: Write failing repository tests**
 
 Create `apps/api/tests/review/test_repository.py`:
 
@@ -167,13 +167,13 @@ def test_list_items_filters_by_status_and_type():
     assert [row.reason_code for row in rows] == ["POSSIBLE_DUPLICATE_ENTITY"]
 ```
 
-- [ ] **Step 2: Run repository tests and confirm failure**
+- [x] **Step 2: Run repository tests and confirm failure**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/review/test_repository.py -v`
 
 Expected: FAIL with `ModuleNotFoundError: No module named 'app.review'`.
 
-- [ ] **Step 3: Implement review models and repository**
+- [x] **Step 3: Implement review models and repository**
 
 Create `apps/api/src/app/review/__init__.py` as an empty package file.
 
@@ -468,13 +468,13 @@ def session_rows(session_factory: sessionmaker, statement):
         return list(session.scalars(statement))
 ```
 
-- [ ] **Step 4: Run repository tests**
+- [x] **Step 4: Run repository tests**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/review/test_repository.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 5: Write failing rule scanner tests**
+- [x] **Step 5: Write failing rule scanner tests**
 
 Create `apps/api/tests/review/test_rules.py`:
 
@@ -524,13 +524,13 @@ def test_rule_scanner_flags_low_confidence_missing_evidence_and_duplicates():
     assert duplicate.item_type == ReviewItemType.DUPLICATE_ENTITY
 ```
 
-- [ ] **Step 6: Run rule scanner test and confirm failure**
+- [x] **Step 6: Run rule scanner test and confirm failure**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/review/test_rules.py -v`
 
 Expected: FAIL with `ModuleNotFoundError: No module named 'app.review.rules'`.
 
-- [ ] **Step 7: Implement deterministic rule scanner**
+- [x] **Step 7: Implement deterministic rule scanner**
 
 Create `apps/api/src/app/review/rules.py`:
 
@@ -617,13 +617,13 @@ def relation_by_id(relation_id: str) -> Relation | None:
     return next((item for item in CATALOG.relation_types if item.id == relation_id), None)
 ```
 
-- [ ] **Step 8: Run review model and rule tests**
+- [x] **Step 8: Run review model and rule tests**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/review/test_repository.py apps/api/tests/review/test_rules.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add apps/api/src/app/review apps/api/src/app/ontology/catalog.py apps/api/tests/review/test_repository.py apps/api/tests/review/test_rules.py
@@ -649,7 +649,7 @@ git commit -m "feat: add review queue models and rules"
   - `ReviewGraphRepository.split_alias(project_id: str, source_entity_id: str, alias: str, target_entity_id: str | None) -> str`
   - `ReviewGraphRepository.review_candidates(project_id: str) -> ReviewGraphSnapshot`
 
-- [ ] **Step 1: Write failing graph filter tests**
+- [x] **Step 1: Write failing graph filter tests**
 
 Create `apps/api/tests/graph/test_review_filters.py`:
 
@@ -708,13 +708,13 @@ def test_rejected_fact_is_hidden_from_default_graph(settings: Settings):
     assert all(row["id"] != "fact-master" for row in after["rows"])
 ```
 
-- [ ] **Step 2: Run graph filter test and confirm failure**
+- [x] **Step 2: Run graph filter test and confirm failure**
 
 Run: `RUN_NEO4J_INTEGRATION=1 .venv/bin/python -m pytest apps/api/tests/graph/test_review_filters.py -v`
 
 Expected: FAIL because `app.review.graph` does not exist or repository does not filter rejected facts.
 
-- [ ] **Step 3: Implement ReviewGraphRepository**
+- [x] **Step 3: Implement ReviewGraphRepository**
 
 Create `apps/api/src/app/review/graph.py`:
 
@@ -837,7 +837,7 @@ class ReviewGraphRepository:
             session.run(statement, **parameters).consume()
 ```
 
-- [ ] **Step 4: Filter rejected facts and merged entities in graph repository**
+- [x] **Step 4: Filter rejected facts and merged entities in graph repository**
 
 Modify every Cypher query in `apps/api/src/app/graph/repository.py` that returns default graph data:
 
@@ -861,13 +861,13 @@ WHERE all(r IN rels WHERE coalesce(r.review_status, 'ACCEPTED') <> 'REJECTED'
 
 If current graph edges are `RELATED` relationships while facts are separate `Fact` nodes, keep both safe: set `review_status` on both `Fact` nodes and corresponding `RELATED` relationships when applying review actions.
 
-- [ ] **Step 5: Run graph filter tests**
+- [x] **Step 5: Run graph filter tests**
 
 Run: `RUN_NEO4J_INTEGRATION=1 .venv/bin/python -m pytest apps/api/tests/graph/test_review_filters.py apps/api/tests/graph/test_live_api.py apps/api/tests/graph/test_service.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/api/src/app/review/graph.py apps/api/src/app/graph/repository.py apps/api/src/app/graph/models.py apps/api/tests/graph/test_review_filters.py
@@ -891,7 +891,7 @@ git commit -m "feat: apply review status to graph queries"
   - `ReviewActionRequest(action_type: ReviewActionType, payload: dict[str, Any], idempotency_key: str | None = None)`
   - `ReviewActionResult(item: ReviewItemRead, action: ReviewActionRead)`
 
-- [ ] **Step 1: Write failing fact action tests**
+- [x] **Step 1: Write failing fact action tests**
 
 Create `apps/api/tests/review/test_service_facts.py`:
 
@@ -972,13 +972,13 @@ def test_reject_fact_is_idempotent():
     assert graph.rejected == ["project-a:fact-1", "project-a:fact-1"]
 ```
 
-- [ ] **Step 2: Run fact action tests and confirm failure**
+- [x] **Step 2: Run fact action tests and confirm failure**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/review/test_service_facts.py -v`
 
 Expected: FAIL because `app.review.service` does not exist.
 
-- [ ] **Step 3: Implement fact action service**
+- [x] **Step 3: Implement fact action service**
 
 Create or modify `apps/api/src/app/review/service.py`:
 
@@ -1042,13 +1042,13 @@ class ReviewService:
         return value
 ```
 
-- [ ] **Step 4: Run fact action tests**
+- [x] **Step 4: Run fact action tests**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/review/test_service_facts.py apps/api/tests/review/test_repository.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 5: Write QA filtering regression test**
+- [x] **Step 5: Write QA filtering regression test**
 
 Create `apps/api/tests/qa/test_review_filters.py`:
 
@@ -1077,13 +1077,13 @@ def test_qa_ignores_rejected_facts_even_if_repository_returns_them():
     assert response.answer == NO_FACTS
 ```
 
-- [ ] **Step 6: Run QA filtering test and confirm failure**
+- [x] **Step 6: Run QA filtering test and confirm failure**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/qa/test_review_filters.py -v`
 
 Expected: FAIL because `QaService` does not explicitly ignore rejected rows if a repository returns them.
 
-- [ ] **Step 7: Harden QA service against rejected rows**
+- [x] **Step 7: Harden QA service against rejected rows**
 
 Modify `apps/api/src/app/qa/service.py` in the loop over `detail["rows"]`:
 
@@ -1095,13 +1095,13 @@ Modify `apps/api/src/app/qa/service.py` in the loop over `detail["rows"]`:
                 continue
 ```
 
-- [ ] **Step 8: Run QA and review tests**
+- [x] **Step 8: Run QA and review tests**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/review/test_service_facts.py apps/api/tests/qa/test_review_filters.py apps/api/tests/qa/test_service.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add apps/api/src/app/review/service.py apps/api/src/app/qa/service.py apps/api/tests/review/test_service_facts.py apps/api/tests/qa/test_review_filters.py
@@ -1123,7 +1123,7 @@ git commit -m "feat: review fact decisions with audit"
   - `merge_entities`: `{"source_entity_id": str, "target_entity_id": str}`
   - `split_alias`: `{"source_entity_id": str, "alias": str, "target_entity_id": str | None}`
 
-- [ ] **Step 1: Write failing entity action tests**
+- [x] **Step 1: Write failing entity action tests**
 
 Create `apps/api/tests/review/test_service_entities.py`:
 
@@ -1200,13 +1200,13 @@ def test_split_alias_returns_created_entity_id_in_audit_payload():
     assert result.action.payload["created_entity_id"] == "e-1__alias__风清扬"
 ```
 
-- [ ] **Step 2: Run entity action tests and confirm failure**
+- [x] **Step 2: Run entity action tests and confirm failure**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/review/test_service_entities.py -v`
 
 Expected: FAIL with `unsupported_action:merge_entities`.
 
-- [ ] **Step 3: Extend ReviewService for merge and split**
+- [x] **Step 3: Extend ReviewService for merge and split**
 
 Modify `apps/api/src/app/review/service.py`:
 
@@ -1229,13 +1229,13 @@ Modify `apps/api/src/app/review/service.py`:
 
 Keep the `DISMISS_ITEM` branch and unsupported branch after these cases.
 
-- [ ] **Step 4: Run entity and fact service tests**
+- [x] **Step 4: Run entity and fact service tests**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/review/test_service_facts.py apps/api/tests/review/test_service_entities.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 5: Add graph-level merge/split integration checks**
+- [x] **Step 5: Add graph-level merge/split integration checks**
 
 Extend `apps/api/tests/graph/test_review_filters.py` with:
 
@@ -1266,13 +1266,13 @@ def test_split_alias_removes_alias_from_source(settings: Settings):
 
 If the imported fixture does not include alias `冲儿`, adjust the fixture entity to include it.
 
-- [ ] **Step 6: Run graph integration checks**
+- [x] **Step 6: Run graph integration checks**
 
 Run: `RUN_NEO4J_INTEGRATION=1 .venv/bin/python -m pytest apps/api/tests/graph/test_review_filters.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add apps/api/src/app/review/service.py apps/api/src/app/review/graph.py apps/api/tests/review/test_service_entities.py apps/api/tests/graph/test_review_filters.py
@@ -1299,7 +1299,7 @@ git commit -m "feat: review entity merge and alias split actions"
   - `GET /api/projects/{project_id}/review/audit`
   - `POST /api/projects/{project_id}/review/scan`
 
-- [ ] **Step 1: Write failing router tests**
+- [x] **Step 1: Write failing router tests**
 
 Create `apps/api/tests/review/test_router.py`:
 
@@ -1344,13 +1344,13 @@ def test_manual_review_item_and_action_endpoint():
     assert action.json()["item"]["status"] == "DISMISSED"
 ```
 
-- [ ] **Step 2: Run router tests and confirm failure**
+- [x] **Step 2: Run router tests and confirm failure**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/review/test_router.py -v`
 
 Expected: FAIL with 404 for review endpoints.
 
-- [ ] **Step 3: Add summary, scan and audit service methods**
+- [x] **Step 3: Add summary, scan and audit service methods**
 
 Modify `apps/api/src/app/review/service.py`:
 
@@ -1397,7 +1397,7 @@ class ReviewService:
 
 Do not create a second `ReviewService` class if Task 3 already created it. Merge these methods into the existing class and add imports for `RuleScanner`, `ReviewSummary` and `ReviewScanResult`.
 
-- [ ] **Step 4: Implement review router**
+- [x] **Step 4: Implement review router**
 
 Create `apps/api/src/app/review/router.py`:
 
@@ -1486,19 +1486,19 @@ from app.review.router import router as review_router
 app.include_router(review_router)
 ```
 
-- [ ] **Step 5: Run router tests**
+- [x] **Step 5: Run router tests**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/review/test_router.py apps/api/tests/test_health.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 6: Run all review backend tests**
+- [x] **Step 6: Run all review backend tests**
 
 Run: `RUN_NEO4J_INTEGRATION=1 .venv/bin/python -m pytest apps/api/tests/review apps/api/tests/graph/test_review_filters.py apps/api/tests/qa/test_review_filters.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add apps/api/src/app/review apps/api/src/app/main.py apps/api/tests/review/test_router.py
@@ -1524,7 +1524,7 @@ git commit -m "feat: expose review workflow APIs"
 - Consumes review endpoints from Task 5.
 - Produces route `/review`.
 
-- [ ] **Step 1: Write failing ReviewPage test**
+- [x] **Step 1: Write failing ReviewPage test**
 
 Create `apps/web/src/features/review/ReviewPage.test.tsx`:
 
@@ -1586,13 +1586,13 @@ describe('ReviewPage', () => {
 })
 ```
 
-- [ ] **Step 2: Run frontend test and confirm failure**
+- [x] **Step 2: Run frontend test and confirm failure**
 
 Run: `npm --prefix apps/web test -- ReviewPage --run`
 
 Expected: FAIL because `ReviewPage` does not exist.
 
-- [ ] **Step 3: Add review API types**
+- [x] **Step 3: Add review API types**
 
 Modify `apps/web/src/api/client.ts`:
 
@@ -1630,7 +1630,7 @@ export type ReviewActionRequest = {
 export type ReviewAction = { id: string; reviewer: string; action_type: string; payload: Record<string, string>; created_at: string }
 ```
 
-- [ ] **Step 4: Implement review components**
+- [x] **Step 4: Implement review components**
 
 Create `apps/web/src/features/review/ReviewSummary.tsx`:
 
@@ -1720,7 +1720,7 @@ export function ReviewPage() {
 }
 ```
 
-- [ ] **Step 5: Wire route and navigation**
+- [x] **Step 5: Wire route and navigation**
 
 Modify `apps/web/src/app/router.tsx`:
 
@@ -1738,19 +1738,19 @@ Modify `apps/web/src/App.tsx` navigation links to include:
 
 Use the existing `NavLink` style and placement pattern in `App.tsx`.
 
-- [ ] **Step 6: Run frontend review tests**
+- [x] **Step 6: Run frontend review tests**
 
 Run: `npm --prefix apps/web test -- ReviewPage --run`
 
 Expected: PASS.
 
-- [ ] **Step 7: Run frontend suite**
+- [x] **Step 7: Run frontend suite**
 
 Run: `npm --prefix apps/web test -- --run && npm --prefix apps/web run typecheck`
 
 Expected: PASS.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add apps/web/src/api/client.ts apps/web/src/app/router.tsx apps/web/src/App.tsx apps/web/src/features/review
@@ -1771,7 +1771,7 @@ git commit -m "feat: add review quality workspace"
 - Consumes: `POST /api/projects/{project_id}/review/items`.
 - Produces graph page manual review entry for facts and entities.
 
-- [ ] **Step 1: Write failing GraphPage manual review test**
+- [x] **Step 1: Write failing GraphPage manual review test**
 
 Modify `apps/web/src/features/graph/GraphPage.test.tsx` by adding:
 
@@ -1805,13 +1805,13 @@ it('adds a visible fact to the review queue', async () => {
 
 Use the existing helpers in `GraphPage.test.tsx`; if helper names differ, adapt the test to the current file's patterns.
 
-- [ ] **Step 2: Run GraphPage test and confirm failure**
+- [x] **Step 2: Run GraphPage test and confirm failure**
 
 Run: `npm --prefix apps/web test -- GraphPage --run`
 
 Expected: FAIL because `加入审核` button is missing.
 
-- [ ] **Step 3: Add manual review callback**
+- [x] **Step 3: Add manual review callback**
 
 Modify `apps/web/src/features/graph/EntityPanel.tsx` props:
 
@@ -1845,13 +1845,13 @@ function reviewFact(factId: string) {
 <EntityPanel detail={detail} onClose={() => setDetail(undefined)} onReviewFact={reviewFact} />
 ```
 
-- [ ] **Step 4: Run graph frontend tests**
+- [x] **Step 4: Run graph frontend tests**
 
 Run: `npm --prefix apps/web test -- GraphPage --run`
 
 Expected: PASS.
 
-- [ ] **Step 5: Add backend router regression for bounded graph filters**
+- [x] **Step 5: Add backend router regression for bounded graph filters**
 
 Modify `apps/api/tests/graph/test_router.py` to assert rejected review status does not leak through router responses if fixture setup supports status mutation. Add a focused test around the repository/service boundary if router fixture does not use Neo4j.
 
@@ -1861,13 +1861,13 @@ Use this assertion shape:
 assert all(edge["id"] != "fact-rejected" for edge in response.json()["edges"])
 ```
 
-- [ ] **Step 6: Run graph and QA regression tests**
+- [x] **Step 6: Run graph and QA regression tests**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/graph apps/api/tests/qa -v`
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add apps/web/src/features/graph apps/api/tests/graph/test_router.py
@@ -1892,7 +1892,7 @@ git commit -m "feat: send graph facts to review"
 - Consumes: all review APIs and `/review` page.
 - Produces: full verification gate and version bump to `0.3.0`.
 
-- [ ] **Step 1: Write E2E review workflow test**
+- [x] **Step 1: Write E2E review workflow test**
 
 Create `tests/e2e/review.spec.ts`:
 
@@ -1926,13 +1926,15 @@ test('reviewer scans, accepts and sees audit trail', async ({ page }) => {
 })
 ```
 
-- [ ] **Step 2: Run E2E test and confirm failure before route/API exists**
+- [x] **Step 2: Run E2E test and confirm failure before route/API exists**
+
+Note: route/API already existed by the time Task 8 started, so the original RED precondition was obsolete. The review E2E was covered by final `make verify` instead.
 
 Run: `npm --prefix tests/e2e test -- review.spec.ts`
 
 Expected before full implementation: FAIL due missing `/review` route or review API.
 
-- [ ] **Step 3: Add backend rule fixture for three review item types**
+- [x] **Step 3: Add backend rule fixture for three review item types**
 
 Extend `apps/api/tests/review/test_rules.py` with a deterministic fixture that produces `LOW_CONFIDENCE_FACT`, `MISSING_EVIDENCE`, and `POSSIBLE_DUPLICATE_ENTITY` in one scan. Do not alter production seed data for this requirement.
 
@@ -1959,7 +1961,7 @@ Run: `.venv/bin/python -m pytest apps/api/tests/review/test_rules.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 4: Update README**
+- [x] **Step 4: Update README**
 
 Modify `README.md` with this section:
 
@@ -1978,7 +1980,7 @@ open http://127.0.0.1:5173/review
 ```
 ~~~
 
-- [ ] **Step 5: Bump version to 0.3.0**
+- [x] **Step 5: Bump version to 0.3.0**
 
 Run:
 
@@ -1993,7 +1995,7 @@ Modify `apps/api/pyproject.toml`:
 version = "0.3.0"
 ```
 
-- [ ] **Step 6: Run full verification**
+- [x] **Step 6: Run full verification**
 
 Run:
 
@@ -2011,7 +2013,7 @@ Expected:
 - evidence validation passes;
 - Phase 1 E2E, online-build E2E and review E2E pass.
 
-- [ ] **Step 7: Leak checks**
+- [x] **Step 7: Leak checks**
 
 Run:
 
@@ -2022,7 +2024,7 @@ git ls-files '笑傲江湖/**'
 
 Expected: no output.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add README.md Makefile apps/api apps/web tests/e2e docs/superpowers/plans/2026-07-07-xiaoao-jianghu-phase-3-review-quality.md
