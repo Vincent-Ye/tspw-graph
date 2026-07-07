@@ -10,7 +10,7 @@ from app.settings import get_settings
 def test_configured_model_smoke():
     provider_kind = os.getenv("RUN_MODEL_SMOKE")
     if not provider_kind:
-        pytest.skip("set RUN_MODEL_SMOKE=openai or ollama")
+        pytest.skip("set RUN_MODEL_SMOKE=openai, azure-openai, or ollama")
     expected = "openai-compatible" if provider_kind == "openai" else provider_kind
     profile = next(
         (item for item in get_settings().model_profiles if item.provider == expected), None
