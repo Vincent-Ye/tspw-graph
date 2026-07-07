@@ -35,6 +35,7 @@ class Neo4jGraphRepository:
             WHERE (toLower(n.name) CONTAINS toLower($search_text)
                 OR any(alias IN coalesce(n.aliases, []) WHERE toLower(alias) CONTAINS toLower($search_text)))
               AND (size($types) = 0 OR n.type IN $types)
+              AND coalesce(n.review_status, 'ACCEPTED') <> 'MERGED'
             RETURN properties(n) AS entity
             ORDER BY CASE WHEN n.name = $search_text THEN 0 ELSE 1 END, n.name
             LIMIT $limit
@@ -60,8 +61,11 @@ class Neo4jGraphRepository:
             MATCH p=(center:Entity {{project_id: $project_id, id: $entity_id}})
                 -[rels:RELATED*1..{depth}]-(other:Entity {{project_id: $project_id}})
             WHERE all(r IN rels WHERE
-                ($from_chapter IS NULL OR r.to_chapter IS NULL OR r.to_chapter >= $from_chapter)
+                coalesce(r.review_status, 'ACCEPTED') <> 'REJECTED'
+                AND ($from_chapter IS NULL OR r.to_chapter IS NULL OR r.to_chapter >= $from_chapter)
                 AND ($to_chapter IS NULL OR r.from_chapter IS NULL OR r.from_chapter <= $to_chapter))
+              AND coalesce(center.review_status, 'ACCEPTED') <> 'MERGED'
+              AND coalesce(other.review_status, 'ACCEPTED') <> 'MERGED'
             WITH collect(p)[..$limit] AS paths
             RETURN
                 reduce(ns = [], p IN paths | ns + nodes(p)) AS nodes,
@@ -96,6 +100,10 @@ class Neo4jGraphRepository:
             MATCH (source:Entity {{project_id: $project_id, id: $source_id}}),
                   (target:Entity {{project_id: $project_id, id: $target_id}})
             MATCH p=shortestPath((source)-[:RELATED*..{max_depth}]-(target))
+            WHERE coalesce(source.review_status, 'ACCEPTED') <> 'MERGED'
+              AND coalesce(target.review_status, 'ACCEPTED') <> 'MERGED'
+              AND all(r IN relationships(p) WHERE coalesce(r.review_status, 'ACCEPTED') <> 'REJECTED')
+              AND all(n IN nodes(p) WHERE coalesce(n.review_status, 'ACCEPTED') <> 'MERGED')
             RETURN nodes(p) AS nodes, relationships(p) AS edges
         """
         with self.driver.session() as session:
@@ -122,13 +130,16 @@ class Neo4jGraphRepository:
     def entity_detail(self, project_id: str, entity_id: str) -> dict[str, Any] | None:
         statement = """
             MATCH (entity:Entity {project_id: $project_id, id: $entity_id})
+            WHERE coalesce(entity.review_status, 'ACCEPTED') <> 'MERGED'
             OPTIONAL MATCH (fact:Fact)-[:SOURCE|TARGET]->(entity)
+            WHERE coalesce(fact.review_status, 'ACCEPTED') <> 'REJECTED'
             OPTIONAL MATCH (fact)-[:SOURCE]->(source:Entity)
             OPTIONAL MATCH (fact)-[:TARGET]->(target:Entity)
             OPTIONAL MATCH (fact)-[:EVIDENCED_BY]->(evidence:Evidence)-[:IN_CHAPTER]->(chapter:Chapter)
             RETURN properties(entity) AS entity,
                 collect(DISTINCT {
                     id: fact.id, type: fact.type, source_id: source.id, target_id: target.id,
+                    review_status: fact.review_status,
                     evidence: {id: evidence.id, chapter_id: chapter.id,
                         chapter_number: chapter.number, chapter_title: chapter.title,
                         start_offset: evidence.start_offset, end_offset: evidence.end_offset,
@@ -152,6 +163,9 @@ class Neo4jGraphRepository:
         statement = """
             MATCH (event:Entity {project_id: $project_id})-[r:RELATED]-(person:Entity {project_id: $project_id})
             WHERE event.type IN ['Event', 'TeachingEvent']
+              AND coalesce(event.review_status, 'ACCEPTED') <> 'MERGED'
+              AND coalesce(person.review_status, 'ACCEPTED') <> 'MERGED'
+              AND coalesce(r.review_status, 'ACCEPTED') <> 'REJECTED'
               AND ($person_id IS NULL OR person.id = $person_id)
               AND ($from_chapter IS NULL OR r.from_chapter >= $from_chapter)
               AND ($to_chapter IS NULL OR r.from_chapter <= $to_chapter)
@@ -175,7 +189,11 @@ class Neo4jGraphRepository:
     def entity_exists(self, project_id: str, entity_id: str) -> bool:
         with self.driver.session() as session:
             return session.run(
-                "MATCH (n:Entity {project_id: $project_id, id: $entity_id}) RETURN count(n) > 0 AS found",
+                """
+                MATCH (n:Entity {project_id: $project_id, id: $entity_id})
+                WHERE coalesce(n.review_status, 'ACCEPTED') <> 'MERGED'
+                RETURN count(n) > 0 AS found
+                """,
                 project_id=project_id,
                 entity_id=entity_id,
             ).single()["found"]

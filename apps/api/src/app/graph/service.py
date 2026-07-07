@@ -78,6 +78,7 @@ class GraphService:
                     "type": row["type"],
                     "source_id": row["source_id"],
                     "target_id": row["target_id"],
+                    "review_status": row.get("review_status"),
                     "evidence": [],
                 },
             )
@@ -104,4 +105,3 @@ class GraphService:
                 project_id, person_id, from_chapter, to_chapter, limit
             )
         ]
-
