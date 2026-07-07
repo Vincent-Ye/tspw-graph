@@ -1123,7 +1123,7 @@ git commit -m "feat: review fact decisions with audit"
   - `merge_entities`: `{"source_entity_id": str, "target_entity_id": str}`
   - `split_alias`: `{"source_entity_id": str, "alias": str, "target_entity_id": str | None}`
 
-- [ ] **Step 1: Write failing entity action tests**
+- [x] **Step 1: Write failing entity action tests**
 
 Create `apps/api/tests/review/test_service_entities.py`:
 
@@ -1200,13 +1200,13 @@ def test_split_alias_returns_created_entity_id_in_audit_payload():
     assert result.action.payload["created_entity_id"] == "e-1__alias__风清扬"
 ```
 
-- [ ] **Step 2: Run entity action tests and confirm failure**
+- [x] **Step 2: Run entity action tests and confirm failure**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/review/test_service_entities.py -v`
 
 Expected: FAIL with `unsupported_action:merge_entities`.
 
-- [ ] **Step 3: Extend ReviewService for merge and split**
+- [x] **Step 3: Extend ReviewService for merge and split**
 
 Modify `apps/api/src/app/review/service.py`:
 
@@ -1229,13 +1229,13 @@ Modify `apps/api/src/app/review/service.py`:
 
 Keep the `DISMISS_ITEM` branch and unsupported branch after these cases.
 
-- [ ] **Step 4: Run entity and fact service tests**
+- [x] **Step 4: Run entity and fact service tests**
 
 Run: `.venv/bin/python -m pytest apps/api/tests/review/test_service_facts.py apps/api/tests/review/test_service_entities.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 5: Add graph-level merge/split integration checks**
+- [x] **Step 5: Add graph-level merge/split integration checks**
 
 Extend `apps/api/tests/graph/test_review_filters.py` with:
 
@@ -1266,13 +1266,13 @@ def test_split_alias_removes_alias_from_source(settings: Settings):
 
 If the imported fixture does not include alias `冲儿`, adjust the fixture entity to include it.
 
-- [ ] **Step 6: Run graph integration checks**
+- [x] **Step 6: Run graph integration checks**
 
 Run: `RUN_NEO4J_INTEGRATION=1 .venv/bin/python -m pytest apps/api/tests/graph/test_review_filters.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add apps/api/src/app/review/service.py apps/api/src/app/review/graph.py apps/api/tests/review/test_service_entities.py apps/api/tests/graph/test_review_filters.py
