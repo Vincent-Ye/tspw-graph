@@ -104,12 +104,38 @@ def test_azure_openai_provider_logs_http_error_response_without_key(caplog):
         client=client,
     )
 
-    with pytest.raises(ProviderError, match="MODEL_HTTP_400"):
+    with pytest.raises(ProviderError, match="MODEL_CONTENT_FILTER"):
         provider.extract(request())
 
     assert "Azure OpenAI HTTP error status=400" in caplog.text
     assert "content_filter" in caplog.text
     assert "azure-secret" not in caplog.text
+
+
+def test_azure_openai_provider_maps_content_filter_to_specific_error():
+    def handler(http_request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            400,
+            json={
+                "error": {
+                    "code": "content_filter",
+                    "innererror": {"code": "ResponsibleAIPolicyViolation"},
+                }
+            },
+            request=http_request,
+        )
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    provider = AzureOpenAIProvider(
+        base_url="https://example.openai.azure.com",
+        deployment="kg-extractor",
+        api_version="2025-01-01-preview",
+        api_key="azure-secret",
+        client=client,
+    )
+
+    with pytest.raises(ProviderError, match="MODEL_CONTENT_FILTER"):
+        provider.extract(request())
 
 
 def test_ollama_provider_uses_non_streaming_schema_format():

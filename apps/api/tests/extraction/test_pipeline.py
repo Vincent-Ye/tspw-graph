@@ -1,6 +1,7 @@
 from app.extraction.fixed import FixedProvider
 from app.extraction.models import ExtractionResult
 from app.extraction.pipeline import ExtractionPipeline
+from app.extraction.providers import ProviderError, ProviderErrorKind
 from app.graph.importer import GraphImporter
 
 
@@ -51,3 +52,19 @@ def test_pipeline_realigns_model_evidence_offsets():
     output = pipeline.process("p-1", "测试", "第一章 开端\n前文甲识乙", FixedProvider(result))
     assert output.quality.accepted_facts == 1
     assert output.quality.rejected_by_code == {}
+
+
+def test_pipeline_skips_content_filtered_chunks():
+    class ContentFilterProvider:
+        def extract(self, request):
+            raise ProviderError(ProviderErrorKind.INVALID_RESPONSE, "MODEL_CONTENT_FILTER")
+
+    writer = MemoryWriter()
+    pipeline = ExtractionPipeline(GraphImporter(writer))
+    output = pipeline.process("p-1", "测试", "第一章 开端\n甲识乙", ContentFilterProvider())
+
+    assert output.quality.total_chunks == 1
+    assert output.quality.successful_chunks == 0
+    assert output.quality.failed_chunks == 1
+    assert output.quality.rejected_by_code == {"MODEL_CONTENT_FILTER": 1}
+    assert output.quality.accepted_facts == 0

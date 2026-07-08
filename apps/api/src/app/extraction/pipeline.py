@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 from app.extraction.models import ExtractionRequest
 from app.extraction.normalize import normalize_chunk_result
-from app.extraction.providers import ExtractionProvider
+from app.extraction.providers import ExtractionProvider, ProviderError
 from app.extraction.splitter import split_document
 from app.graph.importer import GraphImporter
 from app.graph.models import (
@@ -48,18 +48,28 @@ class ExtractionPipeline:
         evidence: dict[str, EvidenceRecord] = {}
         facts: dict[str, FactRecord] = {}
         rejections: Counter[str] = Counter()
+        failed_chunks = 0
+        successful_chunks = 0
         for chunk in split.chunks:
-            extracted = provider.extract(
-                ExtractionRequest(
-                    project_id=project_id,
-                    chunk_id=chunk.id,
-                    text=chunk.text,
-                    ontology={
-                        "entity_types": [item.id.value for item in CATALOG.entity_types],
-                        "relation_types": [item.id.value for item in CATALOG.relation_types],
-                    },
+            try:
+                extracted = provider.extract(
+                    ExtractionRequest(
+                        project_id=project_id,
+                        chunk_id=chunk.id,
+                        text=chunk.text,
+                        ontology={
+                            "entity_types": [item.id.value for item in CATALOG.entity_types],
+                            "relation_types": [item.id.value for item in CATALOG.relation_types],
+                        },
+                    )
                 )
-            )
+            except ProviderError as error:
+                if error.code != "MODEL_CONTENT_FILTER":
+                    raise
+                failed_chunks += 1
+                rejections.update([error.code])
+                continue
+            successful_chunks += 1
             normalized = normalize_chunk_result(project_id, chunk, extracted)
             entities.update((item.id, item) for item in normalized.entities)
             evidence.update((item.id, item) for item in normalized.evidence)
@@ -91,7 +101,8 @@ class ExtractionPipeline:
         return PipelineResult(
             quality=QualityReport(
                 total_chunks=len(split.chunks),
-                successful_chunks=len(split.chunks),
+                successful_chunks=successful_chunks,
+                failed_chunks=failed_chunks,
                 accepted_entities=len(entities),
                 accepted_facts=len(facts),
                 accepted_evidence=len(evidence),

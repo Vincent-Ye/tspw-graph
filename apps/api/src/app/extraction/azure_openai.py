@@ -20,6 +20,18 @@ def _response_excerpt(response: httpx.Response, limit: int = 1000) -> str:
     return text[:limit]
 
 
+def _is_content_filter_response(response: httpx.Response) -> bool:
+    try:
+        error = response.json().get("error", {})
+    except ValueError:
+        return False
+    inner = error.get("innererror") or {}
+    return (
+        error.get("code") == "content_filter"
+        or inner.get("code") == "ResponsibleAIPolicyViolation"
+    )
+
+
 class AzureOpenAIProvider:
     # Azure OpenAI chat completions use deployment-scoped URLs and `api-key` auth:
     # https://learn.microsoft.com/azure/ai-services/openai/reference
@@ -85,6 +97,10 @@ class AzureOpenAIProvider:
                 self.deployment,
                 _response_excerpt(error.response),
             )
+            if _is_content_filter_response(error.response):
+                raise ProviderError(
+                    ProviderErrorKind.INVALID_RESPONSE, "MODEL_CONTENT_FILTER"
+                ) from error
             raise ProviderError(kind, f"MODEL_HTTP_{error.response.status_code}") from error
         except httpx.HTTPError as error:
             raise ProviderError(ProviderErrorKind.RETRYABLE, "MODEL_NETWORK_ERROR") from error
