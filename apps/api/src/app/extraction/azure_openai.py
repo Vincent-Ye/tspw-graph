@@ -9,7 +9,11 @@ from app.extraction.models import (
     ExtractionResult,
     strict_extraction_schema,
 )
-from app.extraction.providers import ProviderError, ProviderErrorKind
+from app.extraction.providers import (
+    ProviderError,
+    ProviderErrorKind,
+    parse_retry_after_seconds,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -101,7 +105,11 @@ class AzureOpenAIProvider:
                 raise ProviderError(
                     ProviderErrorKind.INVALID_RESPONSE, "MODEL_CONTENT_FILTER"
                 ) from error
-            raise ProviderError(kind, f"MODEL_HTTP_{error.response.status_code}") from error
+            raise ProviderError(
+                kind,
+                f"MODEL_HTTP_{error.response.status_code}",
+                retry_after_seconds=parse_retry_after_seconds(error.response.headers),
+            ) from error
         except httpx.HTTPError as error:
             raise ProviderError(ProviderErrorKind.RETRYABLE, "MODEL_NETWORK_ERROR") from error
         except (KeyError, TypeError, ValueError, ValidationError) as error:

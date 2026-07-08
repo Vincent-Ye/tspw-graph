@@ -68,3 +68,41 @@ def test_pipeline_skips_content_filtered_chunks():
     assert output.quality.failed_chunks == 1
     assert output.quality.rejected_by_code == {"MODEL_CONTENT_FILTER": 1}
     assert output.quality.accepted_facts == 0
+
+
+def test_pipeline_retries_retryable_provider_errors():
+    result = ExtractionResult.model_validate({
+        "entities": [
+            {"local_id": "a", "name": "甲", "type": "Person"},
+            {"local_id": "b", "name": "乙", "type": "Person"},
+        ],
+        "facts": [{
+            "relation": "ALLY_OF", "source_local_id": "a", "target_local_id": "b",
+            "evidence": {"start": 0, "end": 3, "quote": "甲识乙"}
+        }],
+    })
+
+    class FlakyProvider:
+        def __init__(self):
+            self.calls = 0
+
+        def extract(self, request):
+            self.calls += 1
+            if self.calls == 1:
+                raise ProviderError(
+                    ProviderErrorKind.RETRYABLE,
+                    "MODEL_HTTP_429",
+                    retry_after_seconds=1.2,
+                )
+            return result
+
+    sleeps = []
+    provider = FlakyProvider()
+    writer = MemoryWriter()
+    pipeline = ExtractionPipeline(GraphImporter(writer), retry_sleep=sleeps.append)
+    output = pipeline.process("p-1", "测试", "第一章 开端\n甲识乙", provider)
+
+    assert provider.calls == 2
+    assert sleeps == [1.2]
+    assert output.quality.retry_count == 1
+    assert output.quality.successful_chunks == 1

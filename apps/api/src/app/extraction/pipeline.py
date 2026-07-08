@@ -1,10 +1,16 @@
 from collections import Counter
+from collections.abc import Callable
+import time
 
 from pydantic import BaseModel, Field
 
-from app.extraction.models import ExtractionRequest
+from app.extraction.models import ExtractionRequest, ExtractionResult
 from app.extraction.normalize import normalize_chunk_result
-from app.extraction.providers import ExtractionProvider, ProviderError
+from app.extraction.providers import (
+    ExtractionProvider,
+    ProviderError,
+    ProviderErrorKind,
+)
 from app.extraction.splitter import split_document
 from app.graph.importer import GraphImporter
 from app.graph.models import (
@@ -33,8 +39,38 @@ class PipelineResult(BaseModel):
 
 
 class ExtractionPipeline:
-    def __init__(self, importer: GraphImporter) -> None:
+    def __init__(
+        self,
+        importer: GraphImporter,
+        *,
+        max_retries: int = 3,
+        retry_backoff_seconds: float = 5.0,
+        retry_sleep: Callable[[float], None] = time.sleep,
+    ) -> None:
         self.importer = importer
+        self.max_retries = max_retries
+        self.retry_backoff_seconds = retry_backoff_seconds
+        self.retry_sleep = retry_sleep
+
+    def _retry_delay(self, error: ProviderError, retry_number: int) -> float:
+        if error.retry_after_seconds is not None:
+            return error.retry_after_seconds
+        return min(60.0, self.retry_backoff_seconds * (2 ** (retry_number - 1)))
+
+    def _extract_with_retries(
+        self,
+        provider: ExtractionProvider,
+        request: ExtractionRequest,
+    ) -> tuple[ExtractionResult, int]:
+        retries = 0
+        while True:
+            try:
+                return provider.extract(request), retries
+            except ProviderError as error:
+                if error.kind != ProviderErrorKind.RETRYABLE or retries >= self.max_retries:
+                    raise
+                retries += 1
+                self.retry_sleep(self._retry_delay(error, retries))
 
     def process(
         self,
@@ -50,19 +86,26 @@ class ExtractionPipeline:
         rejections: Counter[str] = Counter()
         failed_chunks = 0
         successful_chunks = 0
+        retry_count = 0
         for chunk in split.chunks:
             try:
-                extracted = provider.extract(
+                extracted, retries = self._extract_with_retries(
+                    provider,
                     ExtractionRequest(
                         project_id=project_id,
                         chunk_id=chunk.id,
                         text=chunk.text,
                         ontology={
-                            "entity_types": [item.id.value for item in CATALOG.entity_types],
-                            "relation_types": [item.id.value for item in CATALOG.relation_types],
+                            "entity_types": [
+                                item.id.value for item in CATALOG.entity_types
+                            ],
+                            "relation_types": [
+                                item.id.value for item in CATALOG.relation_types
+                            ],
                         },
-                    )
+                    ),
                 )
+                retry_count += retries
             except ProviderError as error:
                 if error.code != "MODEL_CONTENT_FILTER":
                     raise
@@ -108,6 +151,7 @@ class ExtractionPipeline:
                 accepted_evidence=len(evidence),
                 rejected_by_code=dict(rejections),
                 model_calls=len(split.chunks),
+                retry_count=retry_count,
             ),
             import_summary=summary,
         )

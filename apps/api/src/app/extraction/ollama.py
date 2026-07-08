@@ -4,7 +4,11 @@ import httpx
 from pydantic import ValidationError
 
 from app.extraction.models import ExtractionRequest, ExtractionResult
-from app.extraction.providers import ProviderError, ProviderErrorKind
+from app.extraction.providers import (
+    ProviderError,
+    ProviderErrorKind,
+    parse_retry_after_seconds,
+)
 
 
 class OllamaProvider:
@@ -43,7 +47,11 @@ class OllamaProvider:
             return result
         except httpx.HTTPStatusError as error:
             kind = ProviderErrorKind.RETRYABLE if error.response.status_code == 429 or error.response.status_code >= 500 else ProviderErrorKind.CONFIGURATION
-            raise ProviderError(kind, f"MODEL_HTTP_{error.response.status_code}") from error
+            raise ProviderError(
+                kind,
+                f"MODEL_HTTP_{error.response.status_code}",
+                retry_after_seconds=parse_retry_after_seconds(error.response.headers),
+            ) from error
         except httpx.HTTPError as error:
             raise ProviderError(ProviderErrorKind.RETRYABLE, "MODEL_NETWORK_ERROR") from error
         except (KeyError, TypeError, ValueError, ValidationError) as error:

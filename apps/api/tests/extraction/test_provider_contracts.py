@@ -7,7 +7,7 @@ from app.extraction.models import ExtractionRequest
 from app.extraction.azure_openai import AzureOpenAIProvider
 from app.extraction.ollama import OllamaProvider
 from app.extraction.openai_compatible import OpenAICompatibleProvider
-from app.extraction.providers import ProviderError
+from app.extraction.providers import ProviderError, ProviderErrorKind
 
 
 FIXED = json.dumps(
@@ -136,6 +136,32 @@ def test_azure_openai_provider_maps_content_filter_to_specific_error():
 
     with pytest.raises(ProviderError, match="MODEL_CONTENT_FILTER"):
         provider.extract(request())
+
+
+def test_azure_openai_provider_preserves_retry_after_from_rate_limit():
+    def handler(http_request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            429,
+            json={"error": {"code": "rate_limit_exceeded"}},
+            headers={"retry-after-ms": "1200"},
+            request=http_request,
+        )
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    provider = AzureOpenAIProvider(
+        base_url="https://example.openai.azure.com",
+        deployment="kg-extractor",
+        api_version="2025-01-01-preview",
+        api_key="azure-secret",
+        client=client,
+    )
+
+    with pytest.raises(ProviderError) as caught:
+        provider.extract(request())
+
+    assert caught.value.kind == ProviderErrorKind.RETRYABLE
+    assert caught.value.code == "MODEL_HTTP_429"
+    assert caught.value.retry_after_seconds == 1.2
 
 
 def test_ollama_provider_uses_non_streaming_schema_format():

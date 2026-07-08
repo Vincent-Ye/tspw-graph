@@ -1,5 +1,6 @@
 from enum import StrEnum
 import os
+from collections.abc import Mapping
 from typing import Protocol
 
 from app.extraction.models import ExtractionRequest, ExtractionResult
@@ -13,10 +14,35 @@ class ProviderErrorKind(StrEnum):
 
 
 class ProviderError(RuntimeError):
-    def __init__(self, kind: ProviderErrorKind, code: str) -> None:
+    def __init__(
+        self,
+        kind: ProviderErrorKind,
+        code: str,
+        retry_after_seconds: float | None = None,
+    ) -> None:
         super().__init__(code)
         self.kind = kind
         self.code = code
+        self.retry_after_seconds = retry_after_seconds
+
+
+def parse_retry_after_seconds(headers: Mapping[str, str]) -> float | None:
+    for header_name in ("retry-after-ms", "x-ms-retry-after-ms"):
+        value = headers.get(header_name)
+        if value is None:
+            continue
+        try:
+            return max(0.0, float(value) / 1000)
+        except ValueError:
+            return None
+
+    value = headers.get("retry-after")
+    if value is None:
+        return None
+    try:
+        return max(0.0, float(value))
+    except ValueError:
+        return None
 
 
 class ExtractionProvider(Protocol):
