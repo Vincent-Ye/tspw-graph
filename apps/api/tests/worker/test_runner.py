@@ -1,5 +1,6 @@
 from sqlalchemy import create_engine
 
+from app.extraction.providers import ProviderError, ProviderErrorKind
 from app.jobs.models import JobStatus
 from app.jobs.repository import JobRepository
 from app.worker.runner import WorkerRunner
@@ -38,6 +39,50 @@ def test_runner_does_not_repeat_completed_stage():
     assert splitter.calls == 0
     assert extractor.calls == 1
     assert repository.get(job.id).status == JobStatus.RESOLVING
+
+
+def test_runner_preserves_provider_error_code(caplog):
+    repository = JobRepository(create_engine("sqlite+pysqlite:///:memory:"))
+    job = repository.create("p-1", "azure:gpt-4o")
+
+    def fail_with_provider_error(job):
+        raise ProviderError(ProviderErrorKind.CONFIGURATION, "MODEL_HTTP_400")
+
+    runner = WorkerRunner(
+        repository,
+        worker_id="w-1",
+        handlers={JobStatus.SPLITTING: fail_with_provider_error},
+    )
+
+    runner.run_once()
+
+    failed = repository.get(job.id)
+    assert failed.status == JobStatus.FAILED
+    assert failed.error_code == "MODEL_HTTP_400"
+    assert "Worker stage failed" in caplog.text
+    assert job.id in caplog.text
+
+
+def test_runner_logs_unexpected_stage_failure(caplog):
+    repository = JobRepository(create_engine("sqlite+pysqlite:///:memory:"))
+    job = repository.create("p-1", "fixed:test")
+
+    def fail_unexpectedly(job):
+        raise RuntimeError("boom")
+
+    runner = WorkerRunner(
+        repository,
+        worker_id="w-1",
+        handlers={JobStatus.SPLITTING: fail_unexpectedly},
+    )
+
+    runner.run_once()
+
+    failed = repository.get(job.id)
+    assert failed.status == JobStatus.FAILED
+    assert failed.error_code == "WORKER_STAGE_FAILED"
+    assert "Worker stage failed" in caplog.text
+    assert job.id in caplog.text
 
 
 def test_online_handlers_complete_fixed_provider_job(tmp_path):

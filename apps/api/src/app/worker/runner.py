@@ -1,8 +1,12 @@
 from collections.abc import Callable, Mapping
+import logging
 
+from app.extraction.providers import ProviderError
 from app.jobs.models import Job, JobStatus
 from app.jobs.repository import JobRepository
 
+
+logger = logging.getLogger(__name__)
 
 NEXT_STATUS = {
     JobStatus.SPLITTING: JobStatus.EXTRACTING,
@@ -38,6 +42,34 @@ class WorkerRunner:
         try:
             handler(job)
             self.repository.set_status(job.id, NEXT_STATUS[job.status])
+        except ProviderError as error:
+            logger.exception(
+                "Worker stage failed job_id=%s project_id=%s stage=%s error_code=%s",
+                job.id,
+                job.project_id,
+                str(job.status),
+                error.code,
+                extra={
+                    "job_id": job.id,
+                    "project_id": job.project_id,
+                    "stage": str(job.status),
+                    "error_code": error.code,
+                },
+            )
+            self.repository.set_status(job.id, JobStatus.FAILED, error_code=error.code)
         except Exception:
+            logger.exception(
+                "Worker stage failed job_id=%s project_id=%s stage=%s error_code=%s",
+                job.id,
+                job.project_id,
+                str(job.status),
+                "WORKER_STAGE_FAILED",
+                extra={
+                    "job_id": job.id,
+                    "project_id": job.project_id,
+                    "stage": str(job.status),
+                    "error_code": "WORKER_STAGE_FAILED",
+                },
+            )
             self.repository.set_status(job.id, JobStatus.FAILED, error_code="WORKER_STAGE_FAILED")
         return True
