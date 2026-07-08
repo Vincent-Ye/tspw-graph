@@ -25,6 +25,18 @@ def request() -> ExtractionRequest:
     )
 
 
+def assert_strict_schema(schema):
+    if schema.get("type") == "object":
+        properties = schema["properties"]
+        assert schema["additionalProperties"] is False
+        assert set(schema["required"]) == set(properties)
+        assert "default" not in schema
+        for child in properties.values():
+            assert_strict_schema(child)
+    if schema.get("type") == "array":
+        assert_strict_schema(schema["items"])
+
+
 def test_openai_provider_uses_json_schema_and_bearer_auth():
     captured = {}
 
@@ -42,6 +54,7 @@ def test_openai_provider_uses_json_schema_and_bearer_auth():
     assert sent.url.path == "/v1/chat/completions"
     assert sent.headers["authorization"] == "Bearer secret"
     assert body["response_format"]["type"] == "json_schema"
+    assert_strict_schema(body["response_format"]["json_schema"]["schema"])
     assert result.entities[0].name == "令狐冲"
 
 
@@ -68,6 +81,7 @@ def test_azure_openai_provider_uses_deployment_api_version_and_api_key_header():
     assert sent.headers["api-key"] == "azure-secret"
     assert "authorization" not in sent.headers
     assert body["response_format"]["type"] == "json_schema"
+    assert_strict_schema(body["response_format"]["json_schema"]["schema"])
     assert result.entities[0].name == "令狐冲"
 
 

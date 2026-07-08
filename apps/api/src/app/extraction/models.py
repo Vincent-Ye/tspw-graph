@@ -46,3 +46,62 @@ class ExtractionResult(BaseModel):
                 raise ValueError("EVIDENCE_OFFSET_OUT_OF_RANGE")
             if chunk[evidence.start : evidence.end] != evidence.quote:
                 raise ValueError("EVIDENCE_QUOTE_MISMATCH")
+
+
+def strict_extraction_schema() -> dict[str, Any]:
+    """JSON Schema subset accepted by strict structured outputs.
+
+    Pydantic's generated schema is valid JSON Schema, but strict structured
+    output endpoints require every object property to be listed in `required`
+    and reject defaults. Keep this schema intentionally small and let the
+    Pydantic models above enforce fine-grained validation after the model
+    returns JSON.
+    """
+    evidence = {
+        "type": "object",
+        "properties": {
+            "start": {"type": "integer"},
+            "end": {"type": "integer"},
+            "quote": {"type": "string"},
+        },
+        "required": ["start", "end", "quote"],
+        "additionalProperties": False,
+    }
+    entity = {
+        "type": "object",
+        "properties": {
+            "local_id": {"type": "string"},
+            "name": {"type": "string"},
+            "type": {"type": "string"},
+            "aliases": {"type": "array", "items": {"type": "string"}},
+        },
+        "required": ["local_id", "name", "type", "aliases"],
+        "additionalProperties": False,
+    }
+    fact = {
+        "type": "object",
+        "properties": {
+            "relation": {"type": "string"},
+            "source_local_id": {"type": "string"},
+            "target_local_id": {"type": "string"},
+            "evidence": evidence,
+            "confidence": {"type": "number"},
+        },
+        "required": [
+            "relation",
+            "source_local_id",
+            "target_local_id",
+            "evidence",
+            "confidence",
+        ],
+        "additionalProperties": False,
+    }
+    return {
+        "type": "object",
+        "properties": {
+            "entities": {"type": "array", "items": entity},
+            "facts": {"type": "array", "items": fact},
+        },
+        "required": ["entities", "facts"],
+        "additionalProperties": False,
+    }

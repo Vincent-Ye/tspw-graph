@@ -3,7 +3,11 @@ import json
 import httpx
 from pydantic import ValidationError
 
-from app.extraction.models import ExtractionRequest, ExtractionResult
+from app.extraction.models import (
+    ExtractionRequest,
+    ExtractionResult,
+    strict_extraction_schema,
+)
 from app.extraction.providers import ProviderError, ProviderErrorKind
 
 
@@ -40,7 +44,7 @@ class OpenAICompatibleProvider:
                         "json_schema": {
                             "name": "knowledge_graph_extraction",
                             "strict": True,
-                            "schema": ExtractionResult.model_json_schema(),
+                            "schema": strict_extraction_schema(),
                         },
                     },
                 },
