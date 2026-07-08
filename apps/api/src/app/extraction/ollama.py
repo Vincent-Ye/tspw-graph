@@ -40,7 +40,6 @@ class OllamaProvider:
             response.raise_for_status()
             content = response.json()["message"]["content"]
             result = ExtractionResult.model_validate_json(content)
-            result.validate_for_chunk(request.text)
             return result
         except httpx.HTTPStatusError as error:
             kind = ProviderErrorKind.RETRYABLE if error.response.status_code == 429 or error.response.status_code >= 500 else ProviderErrorKind.CONFIGURATION

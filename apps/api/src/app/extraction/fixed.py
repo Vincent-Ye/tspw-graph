@@ -13,7 +13,6 @@ class FixedProvider:
 
     def extract(self, request: ExtractionRequest) -> ExtractionResult:
         result = self.result or self._fixture_result(request.text)
-        result.validate_for_chunk(request.text)
         return result.model_copy(deep=True)
 
     @staticmethod

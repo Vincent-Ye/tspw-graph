@@ -33,3 +33,21 @@ def test_fixed_provider_pipeline_is_idempotent():
     assert first.quality.accepted_facts == 1
     assert first.import_summary.created_facts == 1
     assert second.import_summary.created_facts == 0
+
+
+def test_pipeline_realigns_model_evidence_offsets():
+    result = ExtractionResult.model_validate({
+        "entities": [
+            {"local_id": "a", "name": "甲", "type": "Person"},
+            {"local_id": "b", "name": "乙", "type": "Person"},
+        ],
+        "facts": [{
+            "relation": "ALLY_OF", "source_local_id": "a", "target_local_id": "b",
+            "evidence": {"start": 0, "end": 3, "quote": "甲识乙"}
+        }],
+    })
+    writer = MemoryWriter()
+    pipeline = ExtractionPipeline(GraphImporter(writer))
+    output = pipeline.process("p-1", "测试", "第一章 开端\n前文甲识乙", FixedProvider(result))
+    assert output.quality.accepted_facts == 1
+    assert output.quality.rejected_by_code == {}

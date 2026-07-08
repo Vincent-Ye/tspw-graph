@@ -27,6 +27,17 @@ def _stable_id(*parts: str) -> str:
     return digest
 
 
+def _aligned_evidence_range(chunk_text: str, start: int, end: int, quote: str) -> tuple[int, int] | None:
+    if start < end and end <= len(chunk_text) and chunk_text[start:end] == quote:
+        return start, end
+
+    matches = [match.start() for match in re.finditer(re.escape(quote), chunk_text)]
+    if not matches:
+        return None
+    aligned_start = min(matches, key=lambda index: abs(index - start))
+    return aligned_start, aligned_start + len(quote)
+
+
 def normalize_chunk_result(
     project_id: str, chunk: TextChunk, result: ExtractionResult
 ) -> NormalizedChunk:
@@ -65,15 +76,15 @@ def normalize_chunk_result(
             normalized.rejections.append(Rejection("UNKNOWN_FACT_ENTITY"))
             continue
         evidence = candidate.evidence
-        if (
-            evidence.start >= evidence.end
-            or evidence.end > len(chunk.text)
-            or chunk.text[evidence.start : evidence.end] != evidence.quote
-        ):
+        aligned_range = _aligned_evidence_range(
+            chunk.text, evidence.start, evidence.end, evidence.quote
+        )
+        if aligned_range is None:
             normalized.rejections.append(Rejection("EVIDENCE_MISMATCH"))
             continue
-        absolute_start = chunk.start_offset + evidence.start
-        absolute_end = chunk.start_offset + evidence.end
+        aligned_start, aligned_end = aligned_range
+        absolute_start = chunk.start_offset + aligned_start
+        absolute_end = chunk.start_offset + aligned_end
         evidence_id = f"{project_id}:evidence:{_stable_id(chunk.id, str(absolute_start), evidence.quote)}"
         fact_id = f"{project_id}:fact:{_stable_id(relation.value, source_id, target_id)}"
         normalized.evidence.append(
